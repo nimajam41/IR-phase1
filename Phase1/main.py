@@ -11,7 +11,7 @@ def check_language(lang):
 
 
 def check_index(index):
-    return index == "positional" or index == "bigram"
+    return index == "positional" or index == "bigram" or index == "stop_words" or index == "structured_documents"
 
 
 while True:

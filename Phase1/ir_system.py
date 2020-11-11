@@ -50,7 +50,7 @@ class IRSystem:
                     revision = sub_child
                     for x in revision:
                         if x.tag == '{http://www.mediawiki.org/xml/export-0.10/}text':
-                            new_text = re.sub("[\{\[].*?[\}\]]", "", x.text)
+                            new_text = re.sub("[\{].*?[\}]", "", x.text)
                             descriptions.append(new_text)
         self.collections["persian"].extend([titles, descriptions])
 
@@ -317,7 +317,7 @@ class IRSystem:
                     for x in revision:
                         if x.tag == '{http://www.mediawiki.org/xml/export-0.10/}text':
                             s = x.text
-                            new_text = re.sub("[\{\[].*?[\}\]]", "", s)
+                            new_text = re.sub("[\{].*?[\}]", "", s)
                             descriptions.append(new_text)
         documents.extend([titles, descriptions])
         self.insert(documents, lang,
@@ -478,7 +478,7 @@ class IRSystem:
         for i in range(byte_size):
             result += number[8 * i + 1:8 * i + 7]
         col = (number[-1] == "0") * "title" + \
-            (number[-1] == "1") * "description"
+              (number[-1] == "1") * "description"
         return int(result, 2), col
 
     def positional_index_to_variable_byte(self, positional_index, vb_positional_index):
@@ -562,7 +562,7 @@ class IRSystem:
                     dp[i][j] = dp[i - 1][j - 1]
                 else:
                     dp[i][j] = min(dp[i - 1][j] + 1, dp[i]
-                                   [j - 1] + 1, dp[i - 1][j - 1] + 1)
+                    [j - 1] + 1, dp[i - 1][j - 1] + 1)
         return dp[len(query)][len(term)]
 
     def doc_length(self, doc_id, lang):
@@ -725,6 +725,26 @@ class IRSystem:
                 pickle.dump(
                     self.bigram_index["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
                 pickle_file.close()
+        elif lang == "english" and type_of_indexing == "stop_words":
+            with open('stop_words_english_indexing', 'wb') as pickle_file:
+                pickle.dump(
+                    self.stop_words_dic["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle_file.close()
+        elif lang == "persian" and type_of_indexing == "stop_words":
+            with open('stop_words_persian_indexing', 'wb') as pickle_file:
+                pickle.dump(
+                    self.stop_words_dic["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle_file.close()
+        elif lang == "english" and type_of_indexing == "structured_documents":
+            with open('structured_documents_english_indexing', 'wb') as pickle_file:
+                pickle.dump(
+                    self.structured_documents["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle_file.close()
+        elif lang == "persian" and type_of_indexing == "structured_documents":
+            with open('structured_documents_persian_indexing', 'wb') as pickle_file:
+                pickle.dump(
+                    self.structured_documents["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle_file.close()
         print(type_of_indexing + " " + lang + " indexing saved successfully")
 
     def call_load_index(self, type_of_indexing, lang):
@@ -743,6 +763,22 @@ class IRSystem:
         elif lang == "persian" and type_of_indexing == "bigram":
             with open('bigram_persian_indexing', 'rb') as pickle_file:
                 self.bigram_index["persian"] = pickle.load(pickle_file)
+                pickle_file.close()
+        elif lang == "english" and type_of_indexing == "stop_words":
+            with open('stop_words_english_indexing', 'rb') as pickle_file:
+                self.stop_words_dic["english"] = pickle.load(pickle_file)
+                pickle_file.close()
+        elif lang == "persian" and type_of_indexing == "stop_words":
+            with open('stop_words_persian_indexing', 'rb') as pickle_file:
+                self.stop_words_dic["persian"] = pickle.load(pickle_file)
+                pickle_file.close()
+        elif lang == "english" and type_of_indexing == "structured_documents":
+            with open('structured_documents_english_indexing', 'rb') as pickle_file:
+                self.structured_documents["english"] = pickle.load(pickle_file)
+                pickle_file.close()
+        elif lang == "persian" and type_of_indexing == "structured_documents":
+            with open('structured_documents_persian_indexing', 'rb') as pickle_file:
+                self.structured_documents["persian"] = pickle.load(pickle_file)
                 pickle_file.close()
         print(type_of_indexing + " " + lang + " indexing loaded successfully")
 
