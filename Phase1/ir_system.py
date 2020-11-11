@@ -584,7 +584,7 @@ class IRSystem:
     def tf_idf(self, query, doc_id, lang, q_length):
         result = 0
         for term in query.keys():
-            q_tf = query[term]
+            q_tf = 1 + math.log10(query[term])
             p = self.positional_index[lang][term]
             df = len(p.keys()) - 1
             idf = math.log10(len(self.structured_documents[lang]) / df)
@@ -594,8 +594,8 @@ class IRSystem:
                     tf += len(p[doc_id - 1]["title"])
                 if "description" in p[doc_id - 1].keys():
                     tf += len(p[doc_id - 1]["description"])
-                result += ((tf * idf) / self.doc_length(doc_id -
-                                                        1, lang) * (q_tf / q_length))
+                result += (((1 + math.log10(tf)) * idf) / self.doc_length(doc_id -
+                                                                          1, lang) * (q_tf / q_length))
         return result
 
     def call_prepare(self, lang):
