@@ -1,15 +1,6 @@
-from ir_system import IRSystem
+from Phase1.ir_system import IRSystem
 
 ir_sys = IRSystem()
-
-
-def check_word_is_near(arr1, arr2):
-    flag = True
-    for x1 in arr1:
-        if not arr2.__contains__(x1):
-            flag = False
-            return False
-    return True
 
 
 def check_language(lang):

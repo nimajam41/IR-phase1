@@ -30,7 +30,7 @@ class IRSystem:
     def initialize_english(self):
         english_columns = ["description", "title"]
         english_df = pd.read_csv(
-            "Phase1/data/ted_talks.csv", usecols=english_columns)
+            "data/ted_talks.csv", usecols=english_columns)
         x = len(english_df)
         for i in range(x):
             title = english_df.iloc[i]["title"]
@@ -38,7 +38,7 @@ class IRSystem:
             self.collections["english"] += [[title, description]]
 
     def initialize_persian(self):
-        tree = ET.parse('Phase1/data/Persian.xml')
+        tree = ET.parse('data/Persian.xml')
         root = tree.getroot()
         titles = []
         descriptions = []
