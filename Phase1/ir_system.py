@@ -51,6 +51,7 @@ class IRSystem:
                     for x in revision:
                         if x.tag == '{http://www.mediawiki.org/xml/export-0.10/}text':
                             new_text = re.sub("[\{].*?[\}]", "", x.text)
+                            # new_text = re.sub(r'[^\w\s]', "", new_text)
                             descriptions.append(new_text)
         self.collections["persian"].extend([titles, descriptions])
 
@@ -71,7 +72,25 @@ class IRSystem:
             return self.prepare_persian(documents, stop_words)
 
     @staticmethod
-    def prepare_english(documents, stop_words):
+    def process_stop_words(size, all_tokens):
+        frequency_counter = Counter(all_tokens)
+        tokens_size = len(all_tokens)
+        sorted_token_counter = frequency_counter.most_common(
+            len(frequency_counter))
+        sorted_token_ratio = [(c[0], c[1] / tokens_size)
+                              for c in sorted_token_counter]
+        stop_words = [sorted_token_counter[i][0] for i in range(size)]
+        remaining_terms = [(sorted_token_counter[i][0], sorted_token_counter[i][1]) for i in
+                           range(size, len(frequency_counter))]
+        r = range(size)
+        y = [sorted_token_counter[i][1] for i in range(size)]
+        plt.bar(r, y, color="red", align="center")
+        plt.title("Stopwords Frequencies")
+        plt.xticks(r, stop_words, rotation="vertical")
+        plt.show()
+        return remaining_terms, stop_words
+
+    def prepare_english(self, documents, stop_words):
         processed_documents = []
         all_tokens = []
         for i in range(len(documents)):
@@ -92,21 +111,7 @@ class IRSystem:
                 all_tokens += [word for word in removed_punctuation_part]
             processed_documents += [parts]
         if len(stop_words) == 0:
-            frequency_counter = Counter(all_tokens)
-            tokens_size = len(all_tokens)
-            sorted_token_counter = frequency_counter.most_common(
-                len(frequency_counter))
-            sorted_token_ratio = [(c[0], c[1] / tokens_size)
-                                  for c in sorted_token_counter]
-            stop_words = [sorted_token_counter[i][0] for i in range(40)]
-            remaining_terms = [(sorted_token_counter[i][0], sorted_token_counter[i][1]) for i in
-                               range(40, len(frequency_counter))]
-            r = range(40)
-            y = [sorted_token_counter[i][1] for i in range(40)]
-            plt.bar(r, y, color="red", align="center")
-            plt.title("Stopwords Frequencies")
-            plt.xticks(r, stop_words, rotation="vertical")
-            plt.show()
+            remaining_terms, stop_words = self.process_stop_words(40, all_tokens)
         else:
             remaining_terms = []
         final_tokens = []
@@ -155,7 +160,7 @@ class IRSystem:
                     titles_array.append(persian_word)
             if len(descriptions) != 0:
                 for persian_word in descriptions[i]:
-                    persian_word = persian_word.replace("\u200c", "")
+                    persian_word = re.sub(r'[^\s\w]', "", persian_word)
                     if len(re.findall(r'([a-zA-Z]+)', persian_word)) == 0:
                         descriptions_array.append(persian_word)
             titles[i] = titles_array
@@ -189,21 +194,7 @@ class IRSystem:
             dictionary.append([title_arr, description_arr])
 
         if len(stop_words) == 0:
-            frequency_counter = Counter(all_tokens)
-            tokens_size = len(all_tokens)
-            sorted_token_counter = frequency_counter.most_common(
-                len(frequency_counter))
-            sorted_token_ratio = [(c[0], c[1] / tokens_size)
-                                  for c in sorted_token_counter]
-            stop_words = [sorted_token_counter[i][0] for i in range(40)]
-            remaining_terms = [(sorted_token_counter[i][0], sorted_token_counter[i][1]) for i in
-                               range(40, len(frequency_counter))]
-            r = range(40)
-            y = [sorted_token_counter[i][1] for i in range(40)]
-            plt.bar(r, y, color="red", align="center")
-            plt.title("Stopwords Frequencies")
-            plt.xticks(r, stop_words, rotation="vertical")
-            plt.show()
+            remaining_terms, stop_words = self.process_stop_words(40, all_tokens)
         else:
             remaining_terms = []
         final_tokens = []

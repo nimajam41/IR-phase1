@@ -114,7 +114,7 @@ while True:
             continue
         lang = split_text[1]
         if check_language(lang):
-            print(ir_sys.terms[lang])
+            print(len(ir_sys.terms[lang]))
     elif split_text[0] == "delete":
         if len(split_text) != 3:
             print("not a valid command!")
