@@ -1,4 +1,4 @@
-from Phase1.ir_system import IRSystem
+from ir_system import IRSystem
 
 ir_sys = IRSystem()
 
@@ -96,7 +96,7 @@ while True:
         if split_text[1] == "variable_byte":
             lang = split_text[2]
             if check_language(lang):
-                ir_sys.call_decompress_variable_byte()
+                ir_sys.call_decompress_variable_byte(lang)
         elif split_text[1] == "gamma_code":
             lang = split_text[2]
             if check_language(lang):
@@ -163,7 +163,8 @@ while True:
             continue
         lang = split_text[1]
         if check_language(lang):
-            print(ir_sys.jaccard_similarity(split_text[2], split_text[3], lang))
+            print(ir_sys.jaccard_similarity(
+                split_text[2], split_text[3], lang))
     elif split_text[0] == "correction_list":
         if len(split_text) != 3:
             print("not a valid command!")
@@ -194,10 +195,12 @@ while True:
             continue
         lang = split_text[2]
         if check_language(lang):
-            proximity_len_of_window = int(input("Please Enter Size Of Window: "))
+            proximity_len_of_window = int(
+                input("Please Enter Size Of Window: "))
             query = input("Enter Your Query: ")
             correction = ir_sys.query_spell_correction(lang, query)
-            ir_sys.process_proximity_query(lang, correction, proximity_len_of_window)
+            ir_sys.process_proximity_query(
+                lang, correction, proximity_len_of_window)
     elif split_text[0] == "exit":
         exit()
     elif split_text[0] == "csv":

@@ -29,7 +29,8 @@ class IRSystem:
 
     def initialize_english(self):
         english_columns = ["description", "title"]
-        english_df = pd.read_csv("data/ted_talks.csv", usecols=english_columns)
+        english_df = pd.read_csv(
+            "Phase1/data/ted_talks.csv", usecols=english_columns)
         x = len(english_df)
         for i in range(x):
             title = english_df.iloc[i]["title"]
@@ -37,7 +38,7 @@ class IRSystem:
             self.collections["english"] += [[title, description]]
 
     def initialize_persian(self):
-        tree = ET.parse('data/Persian.xml')
+        tree = ET.parse('Phase1/data/Persian.xml')
         root = tree.getroot()
         titles = []
         descriptions = []
@@ -85,15 +86,18 @@ class IRSystem:
                         case_folded_part[j] = case_folded_part[j].replace(",", "").replace("'", "").replace("-",
                                                                                                             "").replace(
                             "?", "")
-                removed_punctuation_part = [word for word in case_folded_part if word.isalpha()]
+                removed_punctuation_part = [
+                    word for word in case_folded_part if word.isalpha()]
                 parts += [removed_punctuation_part]
                 all_tokens += [word for word in removed_punctuation_part]
             processed_documents += [parts]
         if len(stop_words) == 0:
             frequency_counter = Counter(all_tokens)
             tokens_size = len(all_tokens)
-            sorted_token_counter = frequency_counter.most_common(len(frequency_counter))
-            sorted_token_ratio = [(c[0], c[1] / tokens_size) for c in sorted_token_counter]
+            sorted_token_counter = frequency_counter.most_common(
+                len(frequency_counter))
+            sorted_token_ratio = [(c[0], c[1] / tokens_size)
+                                  for c in sorted_token_counter]
             stop_words = [sorted_token_counter[i][0] for i in range(40)]
             remaining_terms = [(sorted_token_counter[i][0], sorted_token_counter[i][1]) for i in
                                range(40, len(frequency_counter))]
@@ -110,7 +114,8 @@ class IRSystem:
         for i in range(len(documents)):
             parts = processed_documents[i]
             for j in range(len(parts)):
-                parts[j] = [word for word in parts[j] if word not in stop_words]
+                parts[j] = [word for word in parts[j]
+                            if word not in stop_words]
                 parts[j] = [stemmer.stem(word) for word in parts[j]]
                 final_tokens += [word for word in parts[j]]
         return final_tokens, processed_documents, remaining_terms, stop_words
@@ -137,7 +142,8 @@ class IRSystem:
 
             titles[i] = self.word_correction(titles[i], punctuation)
             if len(descriptions) != 0:
-                descriptions[i] = self.word_correction(descriptions[i], punctuation)
+                descriptions[i] = self.word_correction(
+                    descriptions[i], punctuation)
             titles[i] = normalizer.normalize(titles[i])
             titles[i] = word_tokenize(titles[i])
             if len(descriptions) != 0:
@@ -185,8 +191,10 @@ class IRSystem:
         if len(stop_words) == 0:
             frequency_counter = Counter(all_tokens)
             tokens_size = len(all_tokens)
-            sorted_token_counter = frequency_counter.most_common(len(frequency_counter))
-            sorted_token_ratio = [(c[0], c[1] / tokens_size) for c in sorted_token_counter]
+            sorted_token_counter = frequency_counter.most_common(
+                len(frequency_counter))
+            sorted_token_ratio = [(c[0], c[1] / tokens_size)
+                                  for c in sorted_token_counter]
             stop_words = [sorted_token_counter[i][0] for i in range(40)]
             remaining_terms = [(sorted_token_counter[i][0], sorted_token_counter[i][1]) for i in
                                range(40, len(frequency_counter))]
@@ -212,7 +220,8 @@ class IRSystem:
             for word in doc[1]:
                 if word not in stop_words:
                     processed_description_document.append(word)
-            processed_documents.append([processed_title_document, processed_description_document])
+            processed_documents.append(
+                [processed_title_document, processed_description_document])
         return final_tokens, processed_documents, remaining_terms, stop_words
 
     @staticmethod
@@ -226,20 +235,24 @@ class IRSystem:
                         positional_index_creation[term] = dict()
                         positional_index_creation[term]["cf"] = dict()
                         positional_index_creation[term]["cf"] = 0
-                    if docID not in positional_index_creation[term].keys():  # our term is found in new docID
+                    # our term is found in new docID
+                    if docID not in positional_index_creation[term].keys():
                         positional_index_creation[term][docID] = dict()
                     positional_index_creation[term]["cf"] += 1
                     if col == 0:
                         if "title" not in positional_index_creation[term][docID].keys():
-                            positional_index_creation[term][docID]["title"] = [ind + 1]
+                            positional_index_creation[term][docID]["title"] = [
+                                ind + 1]
                         else:
                             positional_index_creation[term][docID]["title"] += [ind + 1]
 
                     elif col == 1:
                         if "description" not in positional_index_creation[term][docID].keys():
-                            positional_index_creation[term][docID]["description"] = [ind + 1]
+                            positional_index_creation[term][docID]["description"] = [
+                                ind + 1]
                         else:
-                            positional_index_creation[term][docID]["description"] += [ind + 1]
+                            positional_index_creation[term][docID]["description"] += [
+                                ind + 1]
 
     @staticmethod
     def bigram(input_list, bigram_creation, start, end):
@@ -268,7 +281,8 @@ class IRSystem:
         self.document_tokens[lang] += [word for word in doc_tokens]
         self.structured_documents[lang] += [doc for doc in docs_structured]
         self.terms[lang] += [term for term in doc_terms if term not in self.terms[lang]]
-        self.bigram(docs_structured, bigram_index, self.docs_size[lang] + 1, self.docs_size[lang] + len(documents))
+        self.bigram(docs_structured, bigram_index,
+                    self.docs_size[lang] + 1, self.docs_size[lang] + len(documents))
         self.positional(docs_structured, positional_index, self.docs_size[lang] + 1,
                         self.docs_size[lang] + len(documents))
         self.docs_size[lang] += len(documents)
@@ -285,7 +299,8 @@ class IRSystem:
             title = df.iloc[i]["title"]
             description = df.iloc[i]["description"]
             documents += [[title, description]]
-        self.insert(documents, lang, self.bigram_index[lang], self.positional_index[lang])
+        self.insert(documents, lang,
+                    self.bigram_index[lang], self.positional_index[lang])
 
     def xml_insert(self, xml_path, lang):
         tree = ET.parse(xml_path)
@@ -305,7 +320,8 @@ class IRSystem:
                             new_text = re.sub("[\{\[].*?[\}\]]", "", s)
                             descriptions.append(new_text)
         documents.extend([titles, descriptions])
-        self.insert(documents, lang, self.bigram_index[lang], self.positional_index[lang])
+        self.insert(documents, lang,
+                    self.bigram_index[lang], self.positional_index[lang])
 
     def delete(self, documents, doc_id, bigram_index, positional_index, deleted_list, lang):
         if doc_id >= len(deleted_list):
@@ -339,7 +355,8 @@ class IRSystem:
             deleted_list[doc_id] = True
             self.docs_size[lang] -= 1
         else:
-            print("this docID (" + str(doc_id + 1) + ") does not exist in the documents set!")
+            print("this docID (" + str(doc_id + 1) +
+                  ") does not exist in the documents set!")
 
     @staticmethod
     def create_gamma_code(number, col):  # col is "title" or "description"
@@ -416,7 +433,8 @@ class IRSystem:
                     positional_index[term]["cf"] = gamma_positional_index[term]["cf"]
                     continue
                 for i in range(len(gamma_positional_index[term][doc_id])):
-                    gap, col = self.decode_gamma_code(gamma_positional_index[term][doc_id][i])
+                    gap, col = self.decode_gamma_code(
+                        gamma_positional_index[term][doc_id][i])
                     if col not in positional_index[term][doc_id].keys():
                         positional_index[term][doc_id][col] = [gap]
                     else:
@@ -441,7 +459,8 @@ class IRSystem:
                 result += "0"
             elif col == "description":
                 result += "1"
-        return int(result, 2).to_bytes(byte_size, sys.byteorder)  # returns bytes of data
+        # returns bytes of data
+        return int(result, 2).to_bytes(byte_size, sys.byteorder)
 
     @staticmethod
     def decode_variable_byte(number):
@@ -458,7 +477,8 @@ class IRSystem:
         result = ""
         for i in range(byte_size):
             result += number[8 * i + 1:8 * i + 7]
-        col = (number[-1] == "0") * "title" + (number[-1] == "1") * "description"
+        col = (number[-1] == "0") * "title" + \
+            (number[-1] == "1") * "description"
         return int(result, 2), col
 
     def positional_index_to_variable_byte(self, positional_index, vb_positional_index):
@@ -498,7 +518,8 @@ class IRSystem:
                     positional_index[term]["cf"] = vb_positional_index[term]["cf"]
                     continue
                 for i in range(len(vb_positional_index[term][doc_id])):
-                    gap, col = self.decode_variable_byte(vb_positional_index[term][doc_id][i])
+                    gap, col = self.decode_variable_byte(
+                        vb_positional_index[term][doc_id][i])
                     if col not in positional_index[term][doc_id].keys():
                         positional_index[term][doc_id][col] = [gap]
                     else:
@@ -540,7 +561,8 @@ class IRSystem:
                 if query[i - 1] == term[j - 1]:
                     dp[i][j] = dp[i - 1][j - 1]
                 else:
-                    dp[i][j] = min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + 1)
+                    dp[i][j] = min(dp[i - 1][j] + 1, dp[i]
+                                   [j - 1] + 1, dp[i - 1][j - 1] + 1)
         return dp[len(query)][len(term)]
 
     def doc_length(self, doc_id, lang):
@@ -553,7 +575,8 @@ class IRSystem:
         counted_terms = Counter(doc_terms)
         for word in counted_terms.keys():
             df_word = len(self.positional_index[lang][word].keys()) - 1
-            idf_word = math.log10(len(self.structured_documents[lang]) / df_word)
+            idf_word = math.log10(
+                len(self.structured_documents[lang]) / df_word)
             tf_idf_word = counted_terms[word] * idf_word
             length += (tf_idf_word ** 2)
         return math.sqrt(length)
@@ -571,7 +594,8 @@ class IRSystem:
                     tf += len(p[doc_id - 1]["title"])
                 if "description" in p[doc_id - 1].keys():
                     tf += len(p[doc_id - 1]["description"])
-                result += ((tf * idf) / self.doc_length(doc_id - 1, lang) * (q_tf / q_length))
+                result += ((tf * idf) / self.doc_length(doc_id -
+                                                        1, lang) * (q_tf / q_length))
         return result
 
     def call_prepare(self, lang):
@@ -579,49 +603,60 @@ class IRSystem:
             lang] = self.prepare_text(
             self.collections[lang], lang, [])
         self.docs_size[lang] = len(self.structured_documents[lang])
-        self.deleted_documents[lang] = [False for _ in range(len(self.structured_documents[lang]))]
+        self.deleted_documents[lang] = [
+            False for _ in range(len(self.structured_documents[lang]))]
 
     def call_create_bigram(self, lang):
-        self.bigram(self.structured_documents[lang], self.bigram_index[lang], 1, self.docs_size[lang])
+        self.bigram(
+            self.structured_documents[lang], self.bigram_index[lang], 1, self.docs_size[lang])
         print("creation was successful")
 
     def call_create_positional(self, lang):
-        self.positional(self.structured_documents[lang], self.positional_index[lang], 1, self.docs_size[lang])
+        self.positional(
+            self.structured_documents[lang], self.positional_index[lang], 1, self.docs_size[lang])
         print("creation was successful")
 
     def call_bigram(self, lang, biword):
         if biword in self.bigram_index[lang].keys():
             print(self.bigram_index[lang][biword])
         else:
-            print("biword (" + biword + ") doesn't match any word in " + lang + " documents.")
+            print("biword (" + biword + ") doesn't match any word in " +
+                  lang + " documents.")
 
     def call_positional(self, lang, term):
         if term in self.positional_index[lang].keys():
             print(self.positional_index[lang][term])
         else:
-            print("term (" + term + ") doesn't match any term in " + lang + " documents.")
+            print("term (" + term + ") doesn't match any term in " +
+                  lang + " documents.")
 
     def call_compress_variable_byte(self, lang):
-        self.positional_index_to_variable_byte(self.positional_index[lang], self.vb_positional_index[lang])
+        self.positional_index_to_variable_byte(
+            self.positional_index[lang], self.vb_positional_index[lang])
         if lang == "english":
             with open('variable_byte_english', 'wb') as pickle_file:
-                pickle.dump(self.vb_positional_index["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(
+                    self.vb_positional_index["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
                 pickle_file.close()
         elif lang == "persian":
             with open('variable_byte_persian', 'wb') as pickle_file:
-                pickle.dump(self.vb_positional_index["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(
+                    self.vb_positional_index["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
                 pickle_file.close()
         print("Positional Index Saved Successfully With Variable Byte Method")
 
     def call_compress_gamma_code(self, lang):
-        self.positional_index_to_gamma_code(self.positional_index[lang], self.gamma_positional_index[lang])
+        self.positional_index_to_gamma_code(
+            self.positional_index[lang], self.gamma_positional_index[lang])
         if lang == "english":
             with open('gamma_code_english', 'wb') as pickle_file:
-                pickle.dump(self.gamma_positional_index["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(
+                    self.gamma_positional_index["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
                 pickle_file.close()
         elif lang == "persian":
             with open('gamma_code_persian', 'wb') as pickle_file:
-                pickle.dump(self.gamma_positional_index["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(
+                    self.gamma_positional_index["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
                 pickle_file.close()
         print("Positional Index Saved Successfully With Gamma Method")
 
@@ -635,20 +670,24 @@ class IRSystem:
                 self.vb_positional_index["persian"] = pickle.load(pickle_file)
                 pickle_file.close()
         self.positional_index[lang].clear()
-        self.variable_byte_to_positional_index(self.vb_positional_index[lang], self.positional_index[lang])
+        self.variable_byte_to_positional_index(
+            self.vb_positional_index[lang], self.positional_index[lang])
         print("Decompressed Done Successfully With Variable Byte Method")
 
     def call_decompress_gamma_code(self, lang):
         if lang == "english":
             with open('gamma_code_english', 'rb') as pickle_file:
-                self.gamma_positional_index["english"] = pickle.load(pickle_file)
+                self.gamma_positional_index["english"] = pickle.load(
+                    pickle_file)
                 pickle_file.close()
         elif lang == "persian":
             with open('gamma_code_persian', 'rb') as pickle_file:
-                self.gamma_positional_index["persian"] = pickle.load(pickle_file)
+                self.gamma_positional_index["persian"] = pickle.load(
+                    pickle_file)
                 pickle_file.close()
         self.positional_index[lang].clear()
-        self.gamma_code_to_positional_index(self.gamma_positional_index[lang], self.positional_index[lang])
+        self.gamma_code_to_positional_index(
+            self.gamma_positional_index[lang], self.positional_index[lang])
         print("Decompressed Done Successfully With Gamma Code Method")
 
     def call_delete(self, lang, doc_id):
@@ -662,24 +701,29 @@ class IRSystem:
             for i in range(part_number):
                 t = input()
                 new_docs[-1] += [t]
-        self.insert(new_docs, lang, self.bigram_index[lang], self.positional_index[lang])
+        self.insert(new_docs, lang,
+                    self.bigram_index[lang], self.positional_index[lang])
 
     def call_save_index(self, type_of_indexing, lang):
         if lang == "english" and type_of_indexing == "positional":
             with open('positional_english_indexing', 'wb') as pickle_file:
-                pickle.dump(self.positional_index["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(
+                    self.positional_index["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
                 pickle_file.close()
         elif lang == "english" and type_of_indexing == "bigram":
             with open('bigram_english_indexing', 'wb') as pickle_file:
-                pickle.dump(self.bigram_index["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(
+                    self.bigram_index["english"], pickle_file, pickle.HIGHEST_PROTOCOL)
                 pickle_file.close()
         elif lang == "persian" and type_of_indexing == "positional":
             with open('positional_persian_indexing', 'wb') as pickle_file:
-                pickle.dump(self.positional_index["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(
+                    self.positional_index["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
                 pickle_file.close()
         elif lang == "persian" and type_of_indexing == "bigram":
             with open('bigram_persian_indexing', 'wb') as pickle_file:
-                pickle.dump(self.bigram_index["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(
+                    self.bigram_index["persian"], pickle_file, pickle.HIGHEST_PROTOCOL)
                 pickle_file.close()
         print(type_of_indexing + " " + lang + " indexing saved successfully")
 
@@ -712,7 +756,8 @@ class IRSystem:
 
     def query_spell_correction(self, lang, query):
         document = [[query]]
-        query_tokens, _, _, _ = self.prepare_text(document, lang, self.stop_words_dic[lang])
+        query_tokens, _, _, _ = self.prepare_text(
+            document, lang, self.stop_words_dic[lang])
         correct_query = True
         correction = []
         for token in query_tokens:
@@ -743,14 +788,17 @@ class IRSystem:
         scores = []
         for doc_id in range(len(self.structured_documents[lang])):
             scores += [self.tf_idf(query_dict, doc_id + 1, lang, q_length)]
-        top_ten = [s[0] for s in sorted(enumerate(scores), key=lambda a: a[1], reverse=True)]
+        top_ten = [s[0] for s in sorted(
+            enumerate(scores), key=lambda a: a[1], reverse=True)]
         for i in range(10):
             if not scores[top_ten[i]] == 0:
-                print("document " + str(top_ten[i] + 1) + ":", self.structured_documents[lang][top_ten[i]])
+                print("document " + str(top_ten[i] + 1) + ":",
+                      self.structured_documents[lang][top_ten[i]])
                 print("ltc-lnc score:", (scores[top_ten[i]]))
 
     def process_proximity_query(self, lang, correction, proximity_len_of_window):
-        list_of_document_contain_all_words = self.documents_contain_all_words(lang, correction)
+        list_of_document_contain_all_words = self.documents_contain_all_words(
+            lang, correction)
         list_of_document_satisfying_proximity = self.documents_satisfying_proximity(lang, correction,
                                                                                     proximity_len_of_window,
                                                                                     list_of_document_contain_all_words)
@@ -759,13 +807,15 @@ class IRSystem:
         q_length = math.sqrt(q_length)
         scores = []
         for doc_id in list_of_document_satisfying_proximity:
-            scores += [(self.tf_idf(query_dict, doc_id + 1, lang, q_length), doc_id + 1)]
+            scores += [(self.tf_idf(query_dict, doc_id +
+                                    1, lang, q_length), doc_id + 1)]
         top_ten = sorted(scores, key=lambda x: x[0], reverse=True)
         if len(top_ten) == 0:
             print("No Result Found!!")
         else:
             for i in range(10):
-                print("document " + str(top_ten[i][1]) + ":", self.structured_documents[lang][top_ten[i][1] - 1])
+                print("document " + str(top_ten[i][1]) + ":",
+                      self.structured_documents[lang][top_ten[i][1] - 1])
                 print("ltc-lnc score:", top_ten[i][0])
                 if i == len(top_ten) - 1:
                     break
@@ -810,7 +860,8 @@ class IRSystem:
                         break
                     else:
                         if self.check_word_is_near(correction, y[i:i + proximity_len_of_window]):
-                            list_of_document_contain_all_words_with_proximity.append(x)
+                            list_of_document_contain_all_words_with_proximity.append(
+                                x)
                             checked = True
                             break
                 if checked:
