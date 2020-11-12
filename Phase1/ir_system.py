@@ -738,39 +738,73 @@ class IRSystem:
         print(type_of_indexing + " " + lang + " indexing saved successfully")
 
     def call_load_index(self, type_of_indexing, lang):
+        is_found = True
         if lang == "english" and type_of_indexing == "positional":
-            with open('positional_english_indexing', 'rb') as pickle_file:
-                self.positional_index["english"] = pickle.load(pickle_file)
-                pickle_file.close()
+            try:
+                with open('positional_english_indexing', 'rb') as pickle_file:
+                    self.positional_index["english"] = pickle.load(pickle_file)
+                    pickle_file.close()
+            except IOError:
+                is_found = False
+                print("File Not Found!!")
         elif lang == "english" and type_of_indexing == "bigram":
-            with open('bigram_english_indexing', 'rb') as pickle_file:
-                self.bigram_index["english"] = pickle.load(pickle_file)
-                pickle_file.close()
+            try:
+                with open('bigram_english_indexing', 'rb') as pickle_file:
+                    self.bigram_index["english"] = pickle.load(pickle_file)
+                    pickle_file.close()
+            except IOError:
+                is_found = False
+                print("File Not Found!!")
         elif lang == "persian" and type_of_indexing == "positional":
-            with open('positional_persian_indexing', 'rb') as pickle_file:
-                self.positional_index["persian"] = pickle.load(pickle_file)
-                pickle_file.close()
+            try:
+                with open('positional_persian_indexing', 'rb') as pickle_file:
+                    self.positional_index["persian"] = pickle.load(pickle_file)
+                    pickle_file.close()
+            except IOError:
+                is_found = False
+                print("File Not Found!!")
         elif lang == "persian" and type_of_indexing == "bigram":
-            with open('bigram_persian_indexing', 'rb') as pickle_file:
-                self.bigram_index["persian"] = pickle.load(pickle_file)
-                pickle_file.close()
+            try:
+                with open('bigram_persian_indexing', 'rb') as pickle_file:
+                    self.bigram_index["persian"] = pickle.load(pickle_file)
+                    pickle_file.close()
+            except IOError:
+                is_found = False
+                print("File Not Found!!")
         elif lang == "english" and type_of_indexing == "stop_words":
-            with open('stop_words_english_indexing', 'rb') as pickle_file:
-                self.stop_words_dic["english"] = pickle.load(pickle_file)
-                pickle_file.close()
+            try:
+                with open('stop_words_english_indexing', 'rb') as pickle_file:
+                    self.stop_words_dic["english"] = pickle.load(pickle_file)
+                    pickle_file.close()
+            except IOError:
+                is_found = False
+                print("File Not Found!!")
         elif lang == "persian" and type_of_indexing == "stop_words":
-            with open('stop_words_persian_indexing', 'rb') as pickle_file:
-                self.stop_words_dic["persian"] = pickle.load(pickle_file)
-                pickle_file.close()
+            try:
+                with open('stop_words_persian_indexing', 'rb') as pickle_file:
+                    self.stop_words_dic["persian"] = pickle.load(pickle_file)
+                    pickle_file.close()
+            except IOError:
+                is_found = False
+                print("File Not Found!!")
         elif lang == "english" and type_of_indexing == "structured_documents":
-            with open('structured_documents_english_indexing', 'rb') as pickle_file:
-                self.structured_documents["english"] = pickle.load(pickle_file)
-                pickle_file.close()
+            try:
+                with open('structured_documents_english_indexing', 'rb') as pickle_file:
+                    self.structured_documents["english"] = pickle.load(pickle_file)
+                    pickle_file.close()
+            except IOError:
+                is_found = False
+                print("File Not Found!!")
         elif lang == "persian" and type_of_indexing == "structured_documents":
-            with open('structured_documents_persian_indexing', 'rb') as pickle_file:
-                self.structured_documents["persian"] = pickle.load(pickle_file)
-                pickle_file.close()
-        print(type_of_indexing + " " + lang + " indexing loaded successfully")
+            try:
+                with open('structured_documents_persian_indexing', 'rb') as pickle_file:
+                    self.structured_documents["persian"] = pickle.load(pickle_file)
+                    pickle_file.close()
+            except IOError:
+                is_found = False
+                print("File Not Found!!")
+        if is_found:
+            print(type_of_indexing + " " + lang + " indexing loaded successfully")
 
     def call_correction_list(self, lang, term):
         corrected_list = []
