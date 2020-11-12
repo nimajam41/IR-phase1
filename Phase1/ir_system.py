@@ -364,11 +364,11 @@ class IRSystem:
             gamma_code += "0"
         elif col == "description":
             gamma_code += "1"
-        return int(gamma_code, 2).to_bytes(math.ceil(len(gamma_code) / 8), sys.byteorder)
+        return gamma_code
 
     @staticmethod
     def decode_gamma_code(number):
-        string_number = str(format(int.from_bytes(number, sys.byteorder), 'b'))
+        string_number = number
         col_bit = string_number[-1]
         col = None
         if col_bit == "0":
@@ -392,7 +392,7 @@ class IRSystem:
                 if term not in gamma_positional_index.keys():
                     gamma_positional_index[term] = dict()
                 if doc_id not in gamma_positional_index[term].keys():
-                    gamma_positional_index[term][doc_id] = dict()
+                    gamma_positional_index[term][doc_id] = "1"
                 if doc_id == "cf":
                     gamma_positional_index[term]["cf"] = positional_index[term]["cf"]
                     continue
@@ -400,16 +400,18 @@ class IRSystem:
                 for col in positional_index[term][doc_id].keys():
                     for i in range(len(positional_index[term][doc_id][col])):
                         if not flag:
-                            gamma_positional_index[term][doc_id] = [
-                                self.create_gamma_code(positional_index[term][doc_id][col][i], col)]
+                            gamma_positional_index[term][doc_id] += self.create_gamma_code(
+                                positional_index[term][doc_id][col][i], col)
                             flag = True
                         elif i == 0:
-                            gamma_positional_index[term][doc_id] += [
-                                self.create_gamma_code(positional_index[term][doc_id][col][i], col)]
+                            gamma_positional_index[term][doc_id] += self.create_gamma_code(
+                                positional_index[term][doc_id][col][i], col)
                         else:
-                            gamma_positional_index[term][doc_id] += [
-                                self.create_gamma_code(positional_index[term][doc_id][col][i]
-                                                       - positional_index[term][doc_id][col][i - 1], col)]
+                            gamma_positional_index[term][doc_id] += self.create_gamma_code(
+                                positional_index[term][doc_id][col][i] - positional_index[term][doc_id][col][i - 1],
+                                col)
+                gamma_positional_index[term][doc_id] = int(gamma_positional_index[term][doc_id], 2).to_bytes(
+                    math.ceil(len(gamma_positional_index[term][doc_id]) / 8), sys.byteorder)
 
     def gamma_code_to_positional_index(self, gamma_positional_index, positional_index):
         dict(positional_index).clear()
@@ -422,14 +424,30 @@ class IRSystem:
                 if doc_id == "cf":
                     positional_index[term]["cf"] = gamma_positional_index[term]["cf"]
                     continue
-                for i in range(len(gamma_positional_index[term][doc_id])):
-                    gap, col = self.decode_gamma_code(
-                        gamma_positional_index[term][doc_id][i])
-                    if col not in positional_index[term][doc_id].keys():
-                        positional_index[term][doc_id][col] = [gap]
+                gamma_code = str(format(int.from_bytes(gamma_positional_index[term][doc_id], sys.byteorder), 'b'))
+                gamma_code = gamma_code[1:]
+                i = 0
+                j = 0
+                len_of_gamma_code = 0
+                while True:
+                    if i == len(gamma_code):
+                        break
+                    if gamma_code[j] == "1":
+                        len_of_gamma_code += 1
+                        j += 1
+                        continue
                     else:
-                        last_value = positional_index[term][doc_id][col][-1]
-                        positional_index[term][doc_id][col] += [last_value + gap]
+                        len_of_gamma_code = 2 * (len_of_gamma_code + 1)
+                        gap, col = self.decode_gamma_code(
+                            gamma_code[i:i + len_of_gamma_code])
+                        if col not in positional_index[term][doc_id].keys():
+                            positional_index[term][doc_id][col] = [gap]
+                        else:
+                            last_value = positional_index[term][doc_id][col][-1]
+                            positional_index[term][doc_id][col] += [last_value + gap]
+                        i += len_of_gamma_code
+                        j = i
+                        len_of_gamma_code = 0
 
     @staticmethod
     def create_variable_byte(number, col):  # col is "title" or "description"
