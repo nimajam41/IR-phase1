@@ -217,7 +217,6 @@ class IRSystem:
 
     @staticmethod
     def positional(input_list, positional_index_creation, start, end):
-        positional_index_creation.clear()
         for docID in range(start - 1, end):
             for col in range(2):
                 for ind in range(len(input_list[docID - start + 1][col])):
