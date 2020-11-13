@@ -370,7 +370,6 @@ class IRSystem:
     def decode_gamma_code(number):
         string_number = number
         col_bit = string_number[-1]
-        col = None
         if col_bit == "0":
             col = "title"
         else:
