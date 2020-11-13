@@ -51,7 +51,7 @@ class IRSystem:
                     for x in revision:
                         if x.tag == '{http://www.mediawiki.org/xml/export-0.10/}text':
                             new_text = re.sub("[\{].*?[\}]", "", x.text)
-                            # new_text = re.sub(r'[^\w\s]', "", new_text)
+                            new_text = re.sub(r'[0-9]', "", new_text)
                             descriptions.append(new_text)
         self.collections["persian"].extend([titles, descriptions])
 
@@ -585,7 +585,7 @@ class IRSystem:
             df_word = len(self.positional_index[lang][word].keys()) - 1
             idf_word = math.log10(
                 len(self.structured_documents[lang]) / df_word)
-            tf_idf_word = counted_terms[word] * idf_word
+            tf_idf_word = (1 + math.log10(counted_terms[word])) * idf_word
             length += (tf_idf_word ** 2)
         return math.sqrt(length)
 
@@ -861,7 +861,7 @@ class IRSystem:
 
     def process_usual_query(self, lang, correction):
         query_dict = Counter(correction)
-        q_length = sum(query_dict[t] ** 2 for t in query_dict.keys())
+        q_length = sum((1 + math.log10(query_dict[t])) ** 2 for t in query_dict.keys())
         q_length = math.sqrt(q_length)
         scores = []
         for doc_id in range(len(self.structured_documents[lang])):
@@ -881,7 +881,7 @@ class IRSystem:
                                                                                     proximity_len_of_window,
                                                                                     list_of_document_contain_all_words)
         query_dict = Counter(correction)
-        q_length = sum(query_dict[t] ** 2 for t in query_dict.keys())
+        q_length = sum((1 + math.log10(query_dict[t])) ** 2 for t in query_dict.keys())
         q_length = math.sqrt(q_length)
         scores = []
         for doc_id in list_of_document_satisfying_proximity:
