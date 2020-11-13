@@ -166,15 +166,6 @@ class IRSystem:
             titles[i] = titles_array
             if len(descriptions) != 0:
                 descriptions[i] = descriptions_array
-            # for x in titles[i]:
-            #     for word in x.split('|'):
-            #         if len(re.findall(r'([a-zA-Z]+)', word)) == 0:
-            #             titles_array.append(word)
-            # if len(descriptions) != 0:
-            #     for x in descriptions[i]:
-            #         for word in x.split('|'):
-            #             if len(re.findall(r'([a-zA-Z]+)', word)) == 0:
-            #                 descriptions_array.append(word)
         stemmer = Stemmer()
 
         all_tokens = []
