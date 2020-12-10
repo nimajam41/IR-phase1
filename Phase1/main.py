@@ -1,6 +1,6 @@
 from Phase1.ir_system import IRSystem
 
-ir_sys = IRSystem()
+ir_sys = IRSystem(["description", "title"], "data/ted_talks.csv", 'data/Persian.xml')
 
 
 def check_language(lang):
@@ -25,7 +25,7 @@ while True:
             continue
         lang = split_text[1]
         if check_language(lang):
-            ir_sys.call_prepare(lang)
+            ir_sys.call_prepare(lang, True)
     elif split_text[0] == "create":
         if len(split_text) != 3:
             print("not a valid command!")

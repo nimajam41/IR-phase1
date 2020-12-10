@@ -12,7 +12,7 @@ import re
 
 
 class IRSystem:
-    def __init__(self):
+    def __init__(self, eng_cols, eng_path, persian_path):
         self.collections = {"english": [], "persian": []}
         self.document_tokens = {"english": [], "persian": []}
         self.structured_documents = {"english": [], "persian": []}
@@ -24,21 +24,22 @@ class IRSystem:
         self.gamma_positional_index = {"english": dict(), "persian": dict()}
         self.docs_size = {"english": 0, "persian": 0}
         self.deleted_documents = {"english": [], "persian": []}
-        self.initialize_english()
-        self.initialize_persian()
+        if eng_path and eng_cols:
+            self.initialize_english(eng_cols, eng_path)
+        if persian_path:
+            self.initialize_persian(persian_path)
 
-    def initialize_english(self):
-        english_columns = ["description", "title"]
-        english_df = pd.read_csv(
-            "data/ted_talks.csv", usecols=english_columns)
+    def initialize_english(self, cols, path):
+        english_columns = cols
+        english_df = pd.read_csv(path, usecols=english_columns)
         x = len(english_df)
         for i in range(x):
             title = english_df.iloc[i]["title"]
             description = english_df.iloc[i]["description"]
             self.collections["english"] += [[title, description]]
 
-    def initialize_persian(self):
-        tree = ET.parse('data/Persian.xml')
+    def initialize_persian(self, path):
+        tree = ET.parse(path)
         root = tree.getroot()
         titles = []
         descriptions = []
@@ -65,11 +66,11 @@ class IRSystem:
                 new_word += token[i]
         return new_word
 
-    def prepare_text(self, documents, lang, stop_words):
+    def prepare_text(self, documents, lang, stop_words, show):
         if lang == "english":
-            return self.prepare_english(documents, stop_words)
+            return self.prepare_english(documents, stop_words, show)
         elif lang == "persian":
-            return self.prepare_persian(documents, stop_words)
+            return self.prepare_persian(documents, stop_words, show)
 
     @staticmethod
     def process_stop_words(size, all_tokens):
@@ -90,7 +91,7 @@ class IRSystem:
         plt.show()
         return remaining_terms, stop_words
 
-    def prepare_english(self, documents, stop_words):
+    def prepare_english(self, documents, stop_words, show):
         processed_documents = []
         all_tokens = []
         for i in range(len(documents)):
@@ -110,7 +111,7 @@ class IRSystem:
                 parts += [removed_punctuation_part]
                 all_tokens += [word for word in removed_punctuation_part]
             processed_documents += [parts]
-        if len(stop_words) == 0:
+        if len(stop_words) == 0 and show:
             remaining_terms, stop_words = self.process_stop_words(40, all_tokens)
         else:
             remaining_terms = []
@@ -125,7 +126,7 @@ class IRSystem:
                 final_tokens += [word for word in parts[j]]
         return final_tokens, processed_documents, remaining_terms, stop_words
 
-    def prepare_persian(self, documents, stop_words):
+    def prepare_persian(self, documents, stop_words, show):
         punctuation = ['!', '"', "'", '#', '(', ')', '*', '-', ',', '.', '/', ':', '[', ']', '|', ';', '?', '،',
                        '...',
                        '$',
@@ -184,7 +185,7 @@ class IRSystem:
                         description_arr.append(stemmer.stem(x))
             dictionary.append([title_arr, description_arr])
 
-        if len(stop_words) == 0:
+        if len(stop_words) == 0 and show:
             remaining_terms, stop_words = self.process_stop_words(40, all_tokens)
         else:
             remaining_terms = []
@@ -258,7 +259,7 @@ class IRSystem:
 
     def insert(self, documents, lang, bigram_index, positional_index):
         doc_tokens, docs_structured, doc_terms, doc_stops = self.prepare_text(documents, lang,
-                                                                              self.stop_words_dic[lang])
+                                                                              self.stop_words_dic[lang], False)
         self.document_tokens[lang] += [word for word in doc_tokens]
         self.structured_documents[lang] += [doc for doc in docs_structured]
         self.terms[lang] += [term for term in doc_terms if term not in self.terms[lang]]
@@ -596,10 +597,25 @@ class IRSystem:
                                                                           1, lang) * (q_tf / q_length))
         return result
 
-    def call_prepare(self, lang):
+    def ntn(self, doc_id, lang):
+        doc = []
+        for part in self.structured_documents[lang][doc_id]:
+            for word in part:
+                doc += [word]
+        doc_dict = Counter(doc)
+        result = dict()
+        for term in doc_dict.keys():
+            if term not in result.keys():
+                p = self.positional_index[lang][term]
+                df = len(p.keys()) - 1
+                idf = math.log10(len(self.structured_documents[lang]) / df)
+                result[term] = doc_dict[term] * idf
+        return result
+
+    def call_prepare(self, lang, show):
         self.document_tokens[lang], self.structured_documents[lang], self.terms[lang], self.stop_words_dic[
             lang] = self.prepare_text(
-            self.collections[lang], lang, [])
+            self.collections[lang], lang, [], show)
         self.docs_size[lang] = len(self.structured_documents[lang])
         self.deleted_documents[lang] = [
             False for _ in range(len(self.structured_documents[lang]))]
@@ -825,7 +841,7 @@ class IRSystem:
     def query_spell_correction(self, lang, query):
         document = [[query]]
         query_tokens, _, _, _ = self.prepare_text(
-            document, lang, self.stop_words_dic[lang])
+            document, lang, self.stop_words_dic[lang], False)
         correct_query = True
         correction = []
         for token in query_tokens:
@@ -935,3 +951,9 @@ class IRSystem:
                 if checked:
                     break
         return list_of_document_contain_all_words_with_proximity
+
+    def use_ntn(self, lang):
+        vectors = []
+        for doc_id in range(len(self.structured_documents[lang])):
+            vectors += [self.ntn(doc_id, lang)]
+        return vectors
