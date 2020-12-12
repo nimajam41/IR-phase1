@@ -1,6 +1,7 @@
 from Phase1.ir_system import IRSystem
 import numpy as np
 import pandas as pd
+import random
 
 
 class Classifier:
@@ -13,10 +14,7 @@ class Classifier:
         self.train_vector_space = self.create_vector_matrix(self.train_ir_sys, "english")
         self.y_train = self.csv_views("data/train.csv")
         self.y_test = self.csv_views("data/test.csv")
-        print(
-            self.knn(self.train_vector_space[:self.train_size], self.y_train, self.train_vector_space[self.train_size:],
-                     1)
-            )
+        self.find_best_k([1, 5, 9])
 
     def csv_views(self, path):
         df = pd.read_csv(path, usecols=["views"])
@@ -72,6 +70,59 @@ class Classifier:
 
     def random_forrest(self):
         pass
+
+    def find_metric(self, y_test, y_pred, metric):
+        tp, fp, fn, tn = 0, 0, 0, 0
+        for i in range(len(y_test)):
+            if y_test[i] == 1 and y_pred[i] == 1:
+                tp += 1
+            elif y_test[i] == -1 and y_pred[i] == 1:
+                fp += 1
+            elif y_test[i] == 1 and y_pred[i] == -1:
+                fn += 1
+            elif y_test[i] == 1 and y_pred[i] == -1:
+                tn += 1
+        if metric == "precision":
+            return tp / (tp + fp)
+        if metric == "recall":
+            return tp / (tp + fn)
+        if metric == "accuracy":
+            return (tp + tn) / (tp + fp + tn + fn)
+        if metric == "f1":
+            precision = tp / (tp + fp)
+            recall = tp / (tp + fn)
+            return 2 * precision * recall / (precision + recall)
+        else:
+            return None
+
+    def make_validation_set(self):
+        x_train_set = []
+        x_validation_set = []
+        y_train_set = []
+        y_validation_set = []
+        for i in range(self.train_size):
+            m = random.uniform(0, 1)
+            if m < 0.9:
+                x_train_set += [self.train_vector_space[i]]
+                y_train_set += [self.y_train[i]]
+            else:
+                x_validation_set += [self.train_vector_space[i]]
+                y_validation_set += [self.y_train[i]]
+        return x_train_set, y_train_set, x_validation_set, y_validation_set
+
+    def find_best_k(self, arr):
+        max_f1 = -1
+        best_k = None
+        x_train_set, y_train_set, x_validation_set, y_validation_set = self.make_validation_set()
+        for k in arr:
+            y_pred = self.knn(x_train_set, y_train_set, x_validation_set, k)
+            f1 = self.find_metric(y_validation_set, y_pred, "f1")
+            if f1 > max_f1:
+                max_f1 = f1
+                best_k = k
+        print("best k is: ", best_k)
+        print("best F1 score is: ", max_f1)
+        return k
 
 
 classifier = Classifier()
