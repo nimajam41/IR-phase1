@@ -1,7 +1,10 @@
 from Phase1.ir_system import IRSystem
+from Phase1.classifier import Classifier
 
 ir_sys = IRSystem(["description", "title"], "data/ted_talks.csv", 'data/Persian.xml')
-
+phase1_classifier = Classifier("data/ted_talks.csv")
+test_classifier = Classifier("data/test.csv")
+best_k = 1
 
 def check_language(lang):
     if (not lang == "english") and (not lang == "persian"):
@@ -214,5 +217,37 @@ while True:
                 ir_sys.xml_insert(split_text[2], lang)
             except:
                 print("No such xml file found in the path!")
+    elif split_text[0] == "knn":
+        if len(split_text) != 3:
+            print("not a valid command!")
+            continue
+        if split_text[1] == "test":
+            try:
+                test_classifier.knn(test_classifier.train_vector_space[:test_classifier.train_size],
+                                    test_classifier.train_vector_space[test_classifier.train_size + 1:],
+                                    test_classifier.y_train, int(split_text[2]))
+            except:
+                print("enter an integer number with a value greater than zero!")
+        elif split_text[1] == "phase1":
+            try:
+                test_classifier.knn(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
+                                    phase1_classifier.train_vector_space[phase1_classifier.train_size + 1:],
+                                    phase1_classifier.y_train, int(split_text[2]))
+            except:
+                print("enter an integer number with a value greater than zero!")
+        else:
+            print("not a valid command!")
+
+    elif split_text[0] == "best":
+        if len(split_text) != 2:
+            print("not a valid command!")
+            continue
+        if split_text[1] == "k":
+            best_k = test_classifier.find_best_k([1, 5, 9], True)
+        elif split_text[1] == "c":
+            pass
+        else:
+            print("not a valid command!")
+
     else:
         print("not a valid command!")

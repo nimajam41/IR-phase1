@@ -5,16 +5,17 @@ import random
 
 
 class Classifier:
-    def __init__(self):
+    def __init__(self, path):
         self.train_ir_sys = IRSystem(["description", "title"], "data/train.csv", None)
         self.train_ir_sys.call_prepare("english", False)
         self.train_ir_sys.call_create_positional("english")
         self.train_size = len(self.train_ir_sys.structured_documents["english"])
-        self.train_ir_sys.csv_insert("data/test.csv", "english")
+        self.train_ir_sys.csv_insert(path, "english")
         self.train_vector_space = self.create_vector_matrix(self.train_ir_sys, "english")
         self.y_train = self.csv_views("data/train.csv")
-        self.y_test = self.csv_views("data/test.csv")
-        self.find_best_k([1, 5, 9])
+        self.y_test = None
+        if path == "data/test.csv":
+            self.y_test = self.csv_views("data/test.csv")
 
     def csv_views(self, path):
         df = pd.read_csv(path, usecols=["views"])
@@ -110,20 +111,29 @@ class Classifier:
                 y_validation_set += [self.y_train[i]]
         return x_train_set, y_train_set, x_validation_set, y_validation_set
 
-    def find_best_k(self, arr):
+    def find_best_k(self, arr, print_flag):
         max_f1 = -1
         best_k = None
         x_train_set, y_train_set, x_validation_set, y_validation_set = self.make_validation_set()
         for k in arr:
             y_pred = self.knn(x_train_set, y_train_set, x_validation_set, k)
             f1 = self.find_metric(y_validation_set, y_pred, "f1")
+            precision = self.find_metric(y_validation_set, y_pred, "precision")
+            recall = self.find_metric(y_validation_set, y_pred, "recall")
+            accuracy = self.find_metric(y_validation_set, y_pred, "accuracy")
+            if print_flag:
+                print("metrics for k = ", k)
+                print("f1 score = ", f1)
+                print("precision = ", precision)
+                print("recall = ", recall)
+                print("accuracy = ", accuracy)
+                print()
             if f1 > max_f1:
                 max_f1 = f1
                 best_k = k
-        print("best k is: ", best_k)
-        print("best F1 score is: ", max_f1)
-        return k
+        if print_flag:
+            print("best k is: ", best_k)
+            print("best f1 score is: ", max_f1)
+        return best_k
 
 
-
-classifier = Classifier()
