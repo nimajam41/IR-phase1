@@ -43,10 +43,12 @@ while True:
             lang = split_text[2]
             if check_language(lang):
                 ir_sys.call_create_positional(lang)
+        elif split_text[1] == "test_classifier":
+            test_classifier = Classifier("data/test.csv")
+            print("test_classifier created")
         elif split_text[1] == "phase1_classifier":
             phase1_classifier = Classifier("data/ted_talks.csv")
-        elif split_text[1] == "test_classifier":
-            phase1_classifier = Classifier("data/test.csv")
+            print("phase1_classifier created")
         else:
             print("not a valid command!")
     elif split_text[0] == "bigram":
@@ -168,6 +170,7 @@ while True:
                     with open('test_classifier_data', 'rb') as pickle_file:
                         test_classifier = pickle.load(pickle_file)
                         pickle_file.close()
+                        print("test classifier loaded successfully")
                 except IOError:
                     print("File Not Found!!")
             elif split_text[1] == "phase1_classifier":
@@ -175,9 +178,10 @@ while True:
                     with open('phase1_classifier_data', 'rb') as pickle_file:
                         phase1_classifier = pickle.load(pickle_file)
                         pickle_file.close()
+                        print("phase1 classifier loaded successfully")
                 except IOError:
                     print("File Not Found!!")
-        if len(split_text) == 3:
+        elif len(split_text) == 3:
             type_of_indexing = split_text[1]
             lang = split_text[2]
             if check_language(lang) and check_index(type_of_indexing):
@@ -283,6 +287,9 @@ while True:
             pass
         else:
             print("not a valid command!")
-
     else:
         print("not a valid command!")
+        print(test_classifier.train_vector_space)
+        print(test_classifier.train_vector_space.__len__())
+        print(test_classifier.train_vector_space[0].__len__())
+
