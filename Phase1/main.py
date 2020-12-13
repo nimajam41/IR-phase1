@@ -1,10 +1,15 @@
+import pickle
+
 from Phase1.ir_system import IRSystem
 from Phase1.classifier import Classifier
 
 ir_sys = IRSystem(["description", "title"], "data/ted_talks.csv", 'data/Persian.xml')
-phase1_classifier = Classifier("data/ted_talks.csv")
-test_classifier = Classifier("data/test.csv")
-best_k = 1
+# phase1_classifier = Classifier("data/ted_talks.csv")
+# test_classifier = Classifier("data/test.csv")
+# best_k = 1
+phase1_classifier = None
+test_classifier = None
+
 
 def check_language(lang):
     if (not lang == "english") and (not lang == "persian"):
@@ -30,9 +35,6 @@ while True:
         if check_language(lang):
             ir_sys.call_prepare(lang, True)
     elif split_text[0] == "create":
-        if len(split_text) != 3:
-            print("not a valid command!")
-            continue
         if split_text[1] == "bigram":
             lang = split_text[2]
             if check_language(lang):
@@ -41,6 +43,10 @@ while True:
             lang = split_text[2]
             if check_language(lang):
                 ir_sys.call_create_positional(lang)
+        elif split_text[1] == "phase1_classifier":
+            phase1_classifier = Classifier("data/ted_talks.csv")
+        elif split_text[1] == "test_classifier":
+            phase1_classifier = Classifier("data/test.csv")
         else:
             print("not a valid command!")
     elif split_text[0] == "bigram":
@@ -136,21 +142,50 @@ while True:
             part_number = int(split_text[3])
             ir_sys.call_insert(lang, doc_number, part_number)
     elif split_text[0] == "save":
-        if len(split_text) != 3:
+        if len(split_text) == 2:
+            if split_text[1] == "test_classifier":
+                with open('test_classifier_data', 'wb') as pickle_file:
+                    pickle.dump(test_classifier, pickle_file)
+                    pickle_file.close()
+                    print("test classifier create successfully")
+            elif split_text[1] == "phase1_classifier":
+                with open('phase1_classifier_data', 'wb') as pickle_file:
+                    pickle.dump(phase1_classifier, pickle_file)
+                    pickle_file.close()
+                    print("phase1 classifier create successfully")
+        elif len(split_text) == 3:
+            type_of_indexing = split_text[1]
+            lang = split_text[2]
+            if check_language(lang) and check_index(type_of_indexing):
+                ir_sys.call_save_index(type_of_indexing, lang)
+        else:
             print("not a valid command!")
             continue
-        type_of_indexing = split_text[1]
-        lang = split_text[2]
-        if check_language(lang) and check_index(type_of_indexing):
-            ir_sys.call_save_index(type_of_indexing, lang)
     elif split_text[0] == "load":
-        if len(split_text) != 3:
+        if len(split_text) == 2:
+            if split_text[1] == "test_classifier":
+                try:
+                    with open('test_classifier_data', 'rb') as pickle_file:
+                        test_classifier = pickle.load(pickle_file)
+                        pickle_file.close()
+                except IOError:
+                    print("File Not Found!!")
+            elif split_text[1] == "phase1_classifier":
+                try:
+                    with open('phase1_classifier_data', 'rb') as pickle_file:
+                        phase1_classifier = pickle.load(pickle_file)
+                        pickle_file.close()
+                except IOError:
+                    print("File Not Found!!")
+        if len(split_text) == 3:
+            type_of_indexing = split_text[1]
+            lang = split_text[2]
+            if check_language(lang) and check_index(type_of_indexing):
+                ir_sys.call_load_index(type_of_indexing, lang)
+        else:
             print("not a valid command!")
             continue
-        type_of_indexing = split_text[1]
-        lang = split_text[2]
-        if check_language(lang) and check_index(type_of_indexing):
-            ir_sys.call_load_index(type_of_indexing, lang)
+
     elif split_text[0] == "jaccard":
         if len(split_text) != 4:
             print("not a valid command!")
