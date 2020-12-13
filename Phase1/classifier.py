@@ -2,6 +2,7 @@ from Phase1.ir_system import IRSystem
 import numpy as np
 import pandas as pd
 import random
+from sklearn.svm import SVC
 
 
 class Classifier:
@@ -66,8 +67,11 @@ class Classifier:
                 result[i] += [dist]
         return result
 
-    def svm(self):
-        pass
+    def svm(self, x_train, y_train, x_test, c_parameter):
+        svclassifier = SVC(kernel='linear', C=c_parameter)
+        classifier = svclassifier.fit(x_train, y_train)
+        y_pred = classifier.predict(x_test)
+        return y_pred
 
     def random_forrest(self):
         pass
@@ -135,5 +139,3 @@ class Classifier:
             print("best k is: ", best_k)
             print("best f1 score is: ", max_f1)
         return best_k
-
-

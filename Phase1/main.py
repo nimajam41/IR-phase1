@@ -276,7 +276,26 @@ while True:
                 print("enter an integer number with a value greater than zero!")
         else:
             print("not a valid command!")
-
+    elif split_text[0] == "svm":
+        if len(split_text) != 3:
+            print("not a valid command!")
+            continue
+        if split_text[1] == "test":
+            try:
+                test_classifier.svm(test_classifier.train_vector_space[:test_classifier.train_size],
+                                    test_classifier.train_vector_space[test_classifier.train_size + 1:],
+                                    test_classifier.y_train, int(split_text[2]))
+            except:
+                print("enter an integer number with a value greater than zero!")
+        elif split_text[1] == "phase1":
+            try:
+                test_classifier.svm(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
+                                    phase1_classifier.train_vector_space[phase1_classifier.train_size + 1:],
+                                    phase1_classifier.y_train, int(split_text[2]))
+            except:
+                print("enter an integer number with a value greater than zero!")
+        else:
+            print("not a valid command!")
     elif split_text[0] == "best":
         if len(split_text) != 2:
             print("not a valid command!")
