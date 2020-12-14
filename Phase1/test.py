@@ -14,17 +14,19 @@ class Classifier:
         self.train_size = len(self.train_ir_sys.structured_documents["english"])
         self.train_ir_sys.csv_insert(path, "english")
         # self.train_vector_space = self.create_vector_matrix(self.train_ir_sys, "english")
-        self.vector_space = self.train_ir_sys.use_ntn("english")
-        print("vector space created successfully")
+#        self.vector_space = self.train_ir_sys.use_ntn("english")
+#        print("vector space created successfully")
         self.y_train = self.csv_views("data/train.csv")
         self.y_test = None
         if path == "data/test.csv":
             self.y_test = self.csv_views("data/test.csv")
         # self.dists = self.documents_distances(self.vector_space[:self.train_size], self.vector_space[self.train_size + 1:])
         # print("distances computed successfully")
-        print(self.vector_space[0])
-        print(self.knn(self.vector_space[:self.train_size], self.y_train, self.vector_space[self.train_size:], 1))
-        self.find_best_k([1, 5, 9], True)
+#        print(self.vector_space[0])
+#        print(self.knn(self.vector_space[:self.train_size], self.y_train, self.vector_space[self.train_size:], 1))
+#        self.find_best_k([1, 5, 9], True)
+
+        self.naive_bayes("english")
 
     def csv_views(self, path):
         df = pd.read_csv(path, usecols=["views"])
@@ -44,8 +46,53 @@ class Classifier:
                 vector[doc_id][self.token_to_number(ir_sys, lang)[term]] = tokenized_vector[doc_id][term]
         return vector
 
-    def naive_bayes(self):
-        pass
+    def naive_bayes(self, lang):
+        flag_counter = {"positive_docs": 0, "negative_docs": 0, "positive_terms": 0, "negative_terms": 0}
+        words = dict()
+        self.naive_bayes_train(flag_counter, words, lang)
+        y_predicted = self.naive_bayes_test(flag_counter, words, lang)
+        print(self.find_metric(self.y_test, y_predicted, "precision"))
+        print(self.find_metric(self.y_test, y_predicted, "recall"))
+        print(self.find_metric(self.y_test, y_predicted, "accuracy"))
+        print(self.find_metric(self.y_test, y_predicted, "f1"))
+
+    def naive_bayes_train(self, flag_counter, words, lang):
+        for docID in range(self.train_size):
+
+            if self.y_train[docID] == 1:
+                flag = "positive"
+                flag_counter["positive_docs"] += 1
+            else:
+                flag = "negative"
+                flag_counter["negative_docs"] += 1
+
+            for col in range(2):
+                for word in self.train_ir_sys.structured_documents[lang][docID][col]:
+                    if word not in words.keys():
+                        words[word] = {"positive": 0, "negative": 0}
+                    words[word][flag] += 1
+                    flag_counter[str(flag + "_terms")] += 1
+
+    def naive_bayes_test(self, flag_counter, words, lang):
+        y_predicted = []
+        p_positive_doc = flag_counter["positive_docs"] / self.train_size
+        p_negative_doc = 1 - p_positive_doc
+        for docID in range(len(self.train_ir_sys.structured_documents[lang]) - self.train_size):
+            p_positive = 1
+            p_negative = 1
+            for col in range(2):
+                for word in self.train_ir_sys.structured_documents[lang][self.train_size + docID][col]:
+                    if word in words.keys():
+                        p_positive *= ((words[word]["positive"] + 1) / (flag_counter["positive_terms"] + len(words)))
+                        p_negative *= ((words[word]["negative"] + 1) / (flag_counter["negative_terms"] + len(words)))
+                    else:  # new word in test Doc
+                        p_positive *= (1 / (flag_counter["positive_terms"] + len(words)))
+                        p_negative *= (1 / (flag_counter["negative_terms"] + len(words)))
+            if p_positive_doc * p_positive >= p_negative_doc * p_negative:
+                y_predicted.append(1)
+            else:
+                y_predicted.append(-1)
+        return y_predicted
 
     def knn(self, x_train, y_train, x_test, k):
         dists = np.array(self.documents_distances(x_train, x_test))
@@ -173,3 +220,4 @@ class Classifier:
 
 
 test = Classifier("data/test.csv")
+
