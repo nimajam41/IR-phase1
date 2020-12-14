@@ -11,6 +11,7 @@ phase1_classifier = None
 test_classifier = None
 
 
+
 def check_language(lang):
     if (not lang == "english") and (not lang == "persian"):
         print("this language " + lang + " is not supported")

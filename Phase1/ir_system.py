@@ -73,7 +73,7 @@ class IRSystem:
             return self.prepare_persian(documents, stop_words, show)
 
     @staticmethod
-    def process_stop_words(size, all_tokens):
+    def process_stop_words(size, all_tokens, show):
         frequency_counter = Counter(all_tokens)
         tokens_size = len(all_tokens)
         sorted_token_counter = frequency_counter.most_common(
@@ -83,12 +83,13 @@ class IRSystem:
         stop_words = [sorted_token_counter[i][0] for i in range(size)]
         remaining_terms = [(sorted_token_counter[i][0], sorted_token_counter[i][1]) for i in
                            range(size, len(frequency_counter))]
-        r = range(size)
-        y = [sorted_token_counter[i][1] for i in range(size)]
-        plt.bar(r, y, color="red", align="center")
-        plt.title("Stopwords Frequencies")
-        plt.xticks(r, stop_words, rotation="vertical")
-        plt.show()
+        if show:
+            r = range(size)
+            y = [sorted_token_counter[i][1] for i in range(size)]
+            plt.bar(r, y, color="red", align="center")
+            plt.title("Stopwords Frequencies")
+            plt.xticks(r, stop_words, rotation="vertical")
+            plt.show()
         return remaining_terms, stop_words
 
     def prepare_english(self, documents, stop_words, show):
@@ -111,8 +112,8 @@ class IRSystem:
                 parts += [removed_punctuation_part]
                 all_tokens += [word for word in removed_punctuation_part]
             processed_documents += [parts]
-        if len(stop_words) == 0 and show:
-            remaining_terms, stop_words = self.process_stop_words(40, all_tokens)
+        if len(stop_words) == 0:
+            remaining_terms, stop_words = self.process_stop_words(40, all_tokens, show)
         else:
             remaining_terms = []
         final_tokens = []
@@ -185,8 +186,8 @@ class IRSystem:
                         description_arr.append(stemmer.stem(x))
             dictionary.append([title_arr, description_arr])
 
-        if len(stop_words) == 0 and show:
-            remaining_terms, stop_words = self.process_stop_words(40, all_tokens)
+        if len(stop_words) == 0:
+            remaining_terms, stop_words = self.process_stop_words(40, all_tokens, show)
         else:
             remaining_terms = []
         final_tokens = []
