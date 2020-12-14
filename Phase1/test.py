@@ -77,18 +77,18 @@ class Classifier:
         y_predicted = []
         p_positive_doc = flag_counter["positive_docs"] / self.train_size
         p_negative_doc = 1 - p_positive_doc
-        for docID in range(len(self.train_ir_sys.structured_documents[lang]) - self.train_size):
-            p_positive = 1
-            p_negative = 1
+        for docID in range(len(self.y_test)):
+            p_positive = 0
+            p_negative = 0
             for col in range(2):
                 for word in self.train_ir_sys.structured_documents[lang][self.train_size + docID][col]:
                     if word in words.keys():
-                        p_positive *= ((words[word]["positive"] + 1) / (flag_counter["positive_terms"] + len(words)))
-                        p_negative *= ((words[word]["negative"] + 1) / (flag_counter["negative_terms"] + len(words)))
+                        p_positive += math.log((words[word]["positive"] + 1) / (flag_counter["positive_terms"] + len(words)))
+                        p_negative += math.log((words[word]["negative"] + 1) / (flag_counter["negative_terms"] + len(words)))
                     else:  # new word in test Doc
-                        p_positive *= (1 / (flag_counter["positive_terms"] + len(words)))
-                        p_negative *= (1 / (flag_counter["negative_terms"] + len(words)))
-            if p_positive_doc * p_positive >= p_negative_doc * p_negative:
+                        p_positive += math.log(1 / (flag_counter["positive_terms"] + len(words)))
+                        p_negative += math.log(1 / (flag_counter["negative_terms"] + len(words)))
+            if math.log(p_positive_doc) + p_positive >= math.log(p_negative_doc) + p_negative:
                 y_predicted.append(1)
             else:
                 y_predicted.append(-1)
