@@ -2,6 +2,7 @@ import pickle
 
 from Phase1.ir_system import IRSystem
 from Phase1.classifier import Classifier
+import numpy as np
 
 ir_sys = IRSystem(["description", "title"], "data/ted_talks.csv", 'data/Persian.xml')
 # phase1_classifier = Classifier("data/ted_talks.csv")
@@ -20,6 +21,14 @@ def check_language(lang):
 
 def check_index(index):
     return index == "positional" or index == "bigram" or index == "stop_words" or index == "structured_documents"
+
+
+def save_predicted_y_for_docs(docs_y_prediction, method):
+    file_name = method + "_" + "y_" + "prediction"
+    with open(file_name, 'wb') as pickle_file:
+        pickle.dump(docs_y_prediction, pickle_file)
+        pickle_file.close()
+        print("y's saved for " + str(method) + " method")
 
 
 while True:
@@ -270,10 +279,13 @@ while True:
                 print("enter an integer number with a value greater than zero!")
         elif split_text[1] == "phase1":
             try:
-                phase1_classifier.knn(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
-                                      phase1_classifier.y_train,
-                                      phase1_classifier.train_vector_space[phase1_classifier.train_size:],
-                                      int(split_text[2]))
+                docs_y_prediction = phase1_classifier.knn(
+                    phase1_classifier.train_vector_space[:phase1_classifier.train_size],
+                    phase1_classifier.y_train,
+                    phase1_classifier.train_vector_space[phase1_classifier.train_size:],
+                    int(split_text[2]))
+                completed_y = np.append(phase1_classifier.y_train, docs_y_prediction)
+                save_predicted_y_for_docs(completed_y, "knn")
             except:
                 print("enter an integer number with a value greater than zero!")
         else:
@@ -292,10 +304,13 @@ while True:
                 print("enter an integer number with a value greater than zero!")
         elif split_text[1] == "phase1":
             try:
-                phase1_classifier.svm(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
-                                      phase1_classifier.y_train,
-                                      phase1_classifier.train_vector_space[phase1_classifier.train_size:],
-                                      float(split_text[2]))
+                docs_y_prediction = phase1_classifier.svm(
+                    phase1_classifier.train_vector_space[:phase1_classifier.train_size],
+                    phase1_classifier.y_train,
+                    phase1_classifier.train_vector_space[phase1_classifier.train_size:],
+                    int(split_text[2]))
+                completed_y = np.append(phase1_classifier.y_train, docs_y_prediction)
+                save_predicted_y_for_docs(completed_y, "svm")
             except:
                 print("enter an integer number with a value greater than zero!")
         else:

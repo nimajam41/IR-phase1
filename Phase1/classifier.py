@@ -17,6 +17,10 @@ class Classifier:
         self.train_vector_space = self.create_vector_matrix(self.train_ir_sys, "english")
         self.y_train = self.csv_views("data/train.csv")
         self.y_test = None
+        self.knn_classifier = None
+        self.svm_classifier = None
+        self.naive_bayes_classifier = None
+        self.random_forrest_classifier = None
         if path == "data/test.csv":
             self.y_test = self.csv_views("data/test.csv")
 
@@ -72,8 +76,8 @@ class Classifier:
     def svm(self, x_train, y_train, x_test, c_parameter):
         model = SVC(kernel='rbf', C=c_parameter)
         model.fit(x_train, y_train)
+        self.svm_classifier = model
         y_pred = model.predict(x_test)
-        # print(confusion_matrix(self.y_test, y_pred).ravel())
         return y_pred
 
     def random_forrest(self, x_train, y_train, x_test):
