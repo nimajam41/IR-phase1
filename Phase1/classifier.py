@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import random
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
 
 
 class Classifier:
@@ -68,13 +70,17 @@ class Classifier:
         return result
 
     def svm(self, x_train, y_train, x_test, c_parameter):
-        svclassifier = SVC(kernel='linear', C=c_parameter)
-        classifier = svclassifier.fit(x_train, y_train)
-        y_pred = classifier.predict(x_test)
+        model = SVC(kernel='rbf', C=c_parameter)
+        model.fit(x_train, y_train)
+        y_pred = model.predict(x_test)
+        # print(confusion_matrix(self.y_test, y_pred).ravel())
         return y_pred
 
-    def random_forrest(self):
-        pass
+    def random_forrest(self, x_train, y_train, x_test):
+        model = RandomForestClassifier()
+        model.fit(x_train, y_train)
+        y_pred = model.predict(x_test)
+        return y_pred
 
     def find_metric(self, y_test, y_pred, metric):
         tp, fp, fn, tn = 0, 0, 0, 0
@@ -85,7 +91,7 @@ class Classifier:
                 fp += 1
             elif y_test[i] == 1 and y_pred[i] == -1:
                 fn += 1
-            elif y_test[i] == 1 and y_pred[i] == -1:
+            elif y_test[i] == -1 and y_pred[i] == -1:
                 tn += 1
         if metric == "precision":
             return tp / (tp + fp)
@@ -139,3 +145,28 @@ class Classifier:
             print("best k is: ", best_k)
             print("best f1 score is: ", max_f1)
         return best_k
+
+    def find_best_c(self, arr, print_flag):
+        max_f1 = -1
+        best_c = None
+        x_train_set, y_train_set, x_validation_set, y_validation_set = self.make_validation_set()
+        for c in arr:
+            y_pred = self.svm(x_train_set, y_train_set, x_validation_set, c)
+            f1 = self.find_metric(y_validation_set, y_pred, "f1")
+            precision = self.find_metric(y_validation_set, y_pred, "precision")
+            recall = self.find_metric(y_validation_set, y_pred, "recall")
+            accuracy = self.find_metric(y_validation_set, y_pred, "accuracy")
+            if print_flag:
+                print("metrics for c = ", c)
+                print("f1 score = ", f1)
+                print("precision = ", precision)
+                print("recall = ", recall)
+                print("accuracy = ", accuracy)
+                print()
+            if f1 > max_f1:
+                max_f1 = f1
+                best_c = c
+        if print_flag:
+            print("best c is: ", best_c)
+            print("best f1 score is: ", max_f1)
+        return best_c

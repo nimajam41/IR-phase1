@@ -11,7 +11,6 @@ phase1_classifier = None
 test_classifier = None
 
 
-
 def check_language(lang):
     if (not lang == "english") and (not lang == "persian"):
         print("this language " + lang + " is not supported")
@@ -264,15 +263,17 @@ while True:
         if split_text[1] == "test":
             try:
                 test_classifier.knn(test_classifier.train_vector_space[:test_classifier.train_size],
-                                    test_classifier.train_vector_space[test_classifier.train_size + 1:],
-                                    test_classifier.y_train, int(split_text[2]))
+                                    test_classifier.y_train,
+                                    test_classifier.train_vector_space[test_classifier.train_size:],
+                                    int(split_text[2]))
             except:
                 print("enter an integer number with a value greater than zero!")
         elif split_text[1] == "phase1":
             try:
-                test_classifier.knn(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
-                                    phase1_classifier.train_vector_space[phase1_classifier.train_size + 1:],
-                                    phase1_classifier.y_train, int(split_text[2]))
+                phase1_classifier.knn(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
+                                      phase1_classifier.y_train,
+                                      phase1_classifier.train_vector_space[phase1_classifier.train_size:],
+                                      int(split_text[2]))
             except:
                 print("enter an integer number with a value greater than zero!")
         else:
@@ -284,15 +285,17 @@ while True:
         if split_text[1] == "test":
             try:
                 test_classifier.svm(test_classifier.train_vector_space[:test_classifier.train_size],
-                                    test_classifier.train_vector_space[test_classifier.train_size + 1:],
-                                    test_classifier.y_train, int(split_text[2]))
+                                    test_classifier.y_train,
+                                    test_classifier.train_vector_space[test_classifier.train_size:],
+                                    float(split_text[2]))
             except:
                 print("enter an integer number with a value greater than zero!")
         elif split_text[1] == "phase1":
             try:
-                test_classifier.svm(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
-                                    phase1_classifier.train_vector_space[phase1_classifier.train_size + 1:],
-                                    phase1_classifier.y_train, int(split_text[2]))
+                phase1_classifier.svm(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
+                                      phase1_classifier.y_train,
+                                      phase1_classifier.train_vector_space[phase1_classifier.train_size:],
+                                      float(split_text[2]))
             except:
                 print("enter an integer number with a value greater than zero!")
         else:
@@ -304,12 +307,32 @@ while True:
         if split_text[1] == "k":
             best_k = test_classifier.find_best_k([1, 5, 9], True)
         elif split_text[1] == "c":
-            pass
+            best_c = test_classifier.find_best_c([0.5, 1, 1.5, 2], True)
         else:
             print("not a valid command!")
+    elif split_text[0] == "accuracy":
+        if len(split_text) != 3 and len(split_text) != 2:
+            print("not a valid command!")
+            continue
+        if split_text[1] == "svm":
+            y_prediction = test_classifier.svm(test_classifier.train_vector_space[:test_classifier.train_size],
+                                               test_classifier.y_train,
+                                               test_classifier.train_vector_space[test_classifier.train_size:],
+                                               float(split_text[2]))
+            print("accuracy is: ", test_classifier.find_metric(test_classifier.y_test, y_prediction, "accuracy"))
+        elif split_text[1] == "knn":
+            y_prediction = test_classifier.knn(test_classifier.train_vector_space[:test_classifier.train_size],
+                                               test_classifier.y_train,
+                                               test_classifier.train_vector_space[test_classifier.train_size:],
+                                               int(split_text[2]))
+            print("accuracy is: ", test_classifier.find_metric(test_classifier.y_test, y_prediction, "accuracy"))
+        elif split_text[1] == "random_forrest":
+            y_prediction = test_classifier.random_forrest(
+                test_classifier.train_vector_space[:test_classifier.train_size],
+                test_classifier.y_train,
+                test_classifier.train_vector_space[test_classifier.train_size:])
+            print("accuracy is: ", test_classifier.find_metric(test_classifier.y_test, y_prediction, "accuracy"))
+        elif split_text[1] == "naive_bayes":
+            pass
     else:
         print("not a valid command!")
-        print(test_classifier.train_vector_space)
-        print(test_classifier.train_vector_space.__len__())
-        print(test_classifier.train_vector_space[0].__len__())
-
