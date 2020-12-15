@@ -7,7 +7,8 @@ import numpy as np
 ir_sys = IRSystem(["description", "title"], "data/ted_talks.csv", 'data/Persian.xml')
 # phase1_classifier = Classifier("data/ted_talks.csv")
 # test_classifier = Classifier("data/test.csv")
-# best_k = 1
+best_k = 1
+best_c = 0.5
 phase1_classifier = None
 test_classifier = None
 
@@ -265,8 +266,18 @@ while True:
                 ir_sys.xml_insert(split_text[2], lang)
             except:
                 print("No such xml file found in the path!")
+    elif split_text[0] == "naive_bayes":
+        if len(split_text) != 2:
+            print("not a valid command!")
+            continue
+        if split_text[1] == "test":
+            print(test_classifier.naive_bayes("english"))
+        elif split_text[1] == "phase1":
+            phase1_classifier.naive_bayes("english")
+        else:
+            print("not a valid command!")
     elif split_text[0] == "knn":
-        if len(split_text) != 3:
+        if len(split_text) != 3 and len(split_text) != 2:
             print("not a valid command!")
             continue
         if split_text[1] == "test":
@@ -283,7 +294,7 @@ while True:
                     phase1_classifier.train_vector_space[:phase1_classifier.train_size],
                     phase1_classifier.y_train,
                     phase1_classifier.train_vector_space[phase1_classifier.train_size:],
-                    int(split_text[2]))
+                    best_k)
                 completed_y = np.append(phase1_classifier.y_train, docs_y_prediction)
                 save_predicted_y_for_docs(completed_y, "knn")
             except:
@@ -291,7 +302,7 @@ while True:
         else:
             print("not a valid command!")
     elif split_text[0] == "svm":
-        if len(split_text) != 3:
+        if len(split_text) != 3 and len(split_text) != 2:
             print("not a valid command!")
             continue
         if split_text[1] == "test":
@@ -308,11 +319,25 @@ while True:
                     phase1_classifier.train_vector_space[:phase1_classifier.train_size],
                     phase1_classifier.y_train,
                     phase1_classifier.train_vector_space[phase1_classifier.train_size:],
-                    int(split_text[2]))
+                    best_c)
                 completed_y = np.append(phase1_classifier.y_train, docs_y_prediction)
                 save_predicted_y_for_docs(completed_y, "svm")
             except:
                 print("enter an integer number with a value greater than zero!")
+        else:
+            print("not a valid command!")
+    elif split_text[0] == "random_forrest":
+        if len(split_text) != 2:
+            print("not a valid command!")
+            continue
+        if split_text[1] == "test":
+            test_classifier.random_forrest(test_classifier.train_vector_space[:test_classifier.train_size],
+                                           test_classifier.y_train,
+                                           test_classifier.train_vector_space[test_classifier.train_size:])
+        elif split_text[1] == "phase1":
+            phase1_classifier.random_forrest(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
+                                             phase1_classifier.y_train,
+                                             phase1_classifier.train_vector_space[phase1_classifier.train_size:])
         else:
             print("not a valid command!")
     elif split_text[0] == "best":
@@ -325,29 +350,36 @@ while True:
             best_c = test_classifier.find_best_c([0.5, 1, 1.5, 2], True)
         else:
             print("not a valid command!")
-    elif split_text[0] == "accuracy":
+    elif split_text[0] == "accuracy" or split_text[0] == "precision" or split_text[0] == "recall" or \
+            split_text[0] == "f1":
         if len(split_text) != 3 and len(split_text) != 2:
             print("not a valid command!")
             continue
+        print_str = split_text[0] + " is: "
         if split_text[1] == "svm":
             y_prediction = test_classifier.svm(test_classifier.train_vector_space[:test_classifier.train_size],
                                                test_classifier.y_train,
                                                test_classifier.train_vector_space[test_classifier.train_size:],
                                                float(split_text[2]))
-            print("accuracy is: ", test_classifier.find_metric(test_classifier.y_test, y_prediction, "accuracy"))
+            print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
         elif split_text[1] == "knn":
             y_prediction = test_classifier.knn(test_classifier.train_vector_space[:test_classifier.train_size],
                                                test_classifier.y_train,
                                                test_classifier.train_vector_space[test_classifier.train_size:],
                                                int(split_text[2]))
-            print("accuracy is: ", test_classifier.find_metric(test_classifier.y_test, y_prediction, "accuracy"))
+            print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
         elif split_text[1] == "random_forrest":
             y_prediction = test_classifier.random_forrest(
                 test_classifier.train_vector_space[:test_classifier.train_size],
                 test_classifier.y_train,
                 test_classifier.train_vector_space[test_classifier.train_size:])
-            print("accuracy is: ", test_classifier.find_metric(test_classifier.y_test, y_prediction, "accuracy"))
+            print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
         elif split_text[1] == "naive_bayes":
-            pass
+            y_prediction = test_classifier.naive_bayes("english")
+            print(len(test_classifier.train_vector_space), len(test_classifier.train_vector_space[1]))
+            print(len(test_classifier.train_ir_sys.positional_index["english"].keys()))
+            print(len(test_classifier.train_ir_sys.structured_documents["english"]))
+            print(len(test_classifier.y_test))
+            print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
     else:
         print("not a valid command!")

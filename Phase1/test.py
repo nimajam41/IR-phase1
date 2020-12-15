@@ -14,17 +14,17 @@ class Classifier:
         self.train_size = len(self.train_ir_sys.structured_documents["english"])
         self.train_ir_sys.csv_insert(path, "english")
         # self.train_vector_space = self.create_vector_matrix(self.train_ir_sys, "english")
-#        self.vector_space = self.train_ir_sys.use_ntn("english")
-#        print("vector space created successfully")
+        #        self.vector_space = self.train_ir_sys.use_ntn("english")
+        #        print("vector space created successfully")
         self.y_train = self.csv_views("data/train.csv")
         self.y_test = None
         if path == "data/test.csv":
             self.y_test = self.csv_views("data/test.csv")
         # self.dists = self.documents_distances(self.vector_space[:self.train_size], self.vector_space[self.train_size + 1:])
         # print("distances computed successfully")
-#        print(self.vector_space[0])
-#        print(self.knn(self.vector_space[:self.train_size], self.y_train, self.vector_space[self.train_size:], 1))
-#        self.find_best_k([1, 5, 9], True)
+        #        print(self.vector_space[0])
+        #        print(self.knn(self.vector_space[:self.train_size], self.y_train, self.vector_space[self.train_size:], 1))
+        #        self.find_best_k([1, 5, 9], True)
 
         self.naive_bayes("english")
 
@@ -55,6 +55,7 @@ class Classifier:
         print(self.find_metric(self.y_test, y_predicted, "recall"))
         print(self.find_metric(self.y_test, y_predicted, "accuracy"))
         print(self.find_metric(self.y_test, y_predicted, "f1"))
+        return y_predicted
 
     def naive_bayes_train(self, flag_counter, words, lang):
         for docID in range(self.train_size):
@@ -83,8 +84,10 @@ class Classifier:
             for col in range(2):
                 for word in self.train_ir_sys.structured_documents[lang][self.train_size + docID][col]:
                     if word in words.keys():
-                        p_positive += math.log((words[word]["positive"] + 1) / (flag_counter["positive_terms"] + len(words)))
-                        p_negative += math.log((words[word]["negative"] + 1) / (flag_counter["negative_terms"] + len(words)))
+                        p_positive += math.log(
+                            (words[word]["positive"] + 1) / (flag_counter["positive_terms"] + len(words)))
+                        p_negative += math.log(
+                            (words[word]["negative"] + 1) / (flag_counter["negative_terms"] + len(words)))
                     else:  # new word in test Doc
                         p_positive += math.log(1 / (flag_counter["positive_terms"] + len(words)))
                         p_negative += math.log(1 / (flag_counter["negative_terms"] + len(words)))
@@ -163,7 +166,7 @@ class Classifier:
                 fp += 1
             elif y_test[i] == 1 and y_pred[i] == -1:
                 fn += 1
-            elif y_test[i] == 1 and y_pred[i] == -1:
+            elif y_test[i] == -1 and y_pred[i] == -1:
                 tn += 1
         if metric == "precision":
             return tp / (tp + fp)
@@ -220,4 +223,9 @@ class Classifier:
 
 
 test = Classifier("data/test.csv")
-
+y_pred = test.naive_bayes("english")
+print(len(test.train_ir_sys.positional_index["english"].keys()))
+print(len(test.train_ir_sys.structured_documents["english"]))
+print(len(test.y_test))
+print(test.find_metric(test.y_test, y_pred, "accuracy"))
+print(y_pred)

@@ -4,7 +4,7 @@ import pandas as pd
 import random
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix
+import math
 
 
 class Classifier:
@@ -42,8 +42,52 @@ class Classifier:
                 vector[doc_id][self.token_to_number(ir_sys, lang)[term]] = tokenized_vector[doc_id][term]
         return vector
 
-    def naive_bayes(self):
-        pass
+    def naive_bayes(self, lang):
+        flag_counter = {"positive_docs": 0, "negative_docs": 0, "positive_terms": 0, "negative_terms": 0}
+        words = dict()
+        self.naive_bayes_train(flag_counter, words, lang)
+        y_predicted = self.naive_bayes_test(flag_counter, words, lang)
+        return y_predicted
+
+    def naive_bayes_train(self, flag_counter, words, lang):
+        for docID in range(self.train_size):
+
+            if self.y_train[docID] == 1:
+                flag = "positive"
+                flag_counter["positive_docs"] += 1
+            else:
+                flag = "negative"
+                flag_counter["negative_docs"] += 1
+
+            for col in range(2):
+                for word in self.train_ir_sys.structured_documents[lang][docID][col]:
+                    if word not in words.keys():
+                        words[word] = {"positive": 0, "negative": 0}
+                    words[word][flag] += 1
+                    flag_counter[str(flag + "_terms")] += 1
+
+    def naive_bayes_test(self, flag_counter, words, lang):
+        y_predicted = []
+        p_positive_doc = flag_counter["positive_docs"] / self.train_size
+        p_negative_doc = 1 - p_positive_doc
+        for docID in range(len(self.y_test)):
+            p_positive = 0
+            p_negative = 0
+            for col in range(2):
+                for word in self.train_ir_sys.structured_documents[lang][self.train_size + docID][col]:
+                    if word in words.keys():
+                        p_positive += math.log(
+                            (words[word]["positive"] + 1) / (flag_counter["positive_terms"] + len(words)))
+                        p_negative += math.log(
+                            (words[word]["negative"] + 1) / (flag_counter["negative_terms"] + len(words)))
+                    else:  # new word in test Doc
+                        p_positive += math.log(1 / (flag_counter["positive_terms"] + len(words)))
+                        p_negative += math.log(1 / (flag_counter["negative_terms"] + len(words)))
+            if math.log(p_positive_doc) + p_positive >= math.log(p_negative_doc) + p_negative:
+                y_predicted.append(1)
+            else:
+                y_predicted.append(-1)
+        return y_predicted
 
     def knn(self, x_train, y_train, x_test, k):
         dists = np.array(self.docs_distances(x_train, x_test))
