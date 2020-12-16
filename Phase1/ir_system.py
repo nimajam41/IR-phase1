@@ -971,6 +971,7 @@ class IRSystem:
         except IOError:
             print("File Not Found!!")
             print("First You Must Classify Your Docs")
+            return
         for doc_id in range(len(self.structured_documents["english"])):
             if docs_label[doc_id] == zone_of_search:
                 scores += [self.tf_idf(query_dict, doc_id + 1, "english", q_length)]
