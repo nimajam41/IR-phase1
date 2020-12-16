@@ -9,6 +9,7 @@ from nltk.stem import SnowballStemmer
 from hazm import *
 import matplotlib.pyplot as plt
 import re
+from operator import itemgetter
 
 
 class IRSystem:
@@ -974,11 +975,10 @@ class IRSystem:
             return
         for doc_id in range(len(self.structured_documents["english"])):
             if docs_label[doc_id] == zone_of_search:
-                scores += [self.tf_idf(query_dict, doc_id + 1, "english", q_length)]
-        top_ten = [s[0] for s in sorted(
-            enumerate(scores), key=lambda a: a[1], reverse=True)]
+                scores += [(self.tf_idf(query_dict, doc_id + 1, "english", q_length), doc_id)]
+        top_ten = sorted(scores, key=itemgetter(0), reverse=True)
         for i in range(10):
-            if not scores[top_ten[i]] == 0:
-                print("document " + str(top_ten[i] + 1) + ":",
-                      self.structured_documents["english"][top_ten[i]])
-                print("ltc-lnc score:", (scores[top_ten[i]]))
+            if not top_ten[i][0] == 0:
+                print("document " + str(top_ten[i][1] + 1) + ":",
+                      self.structured_documents["english"][top_ten[i][1]])
+                print("ltc-lnc score:", (top_ten[i][0]))

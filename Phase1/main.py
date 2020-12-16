@@ -392,10 +392,4 @@ while True:
             print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
     else:
         print("not a valid command!")
-        with open('random_forrest_y_prediction', 'rb') as pickle_file:
-            kos = pickle.load(pickle_file)
-            pickle_file.close()
-            for x in kos:
-                print(x, end=" ")
-        print("kos")
-        print(ir_sys.docs_size["english"])
+
