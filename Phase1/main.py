@@ -244,6 +244,14 @@ while True:
             correction = ir_sys.query_spell_correction(lang, query)
             ir_sys.process_proximity_query(
                 lang, correction, proximity_len_of_window)
+    elif split_text[0] == "phase1" and split_text[1] == "query":
+        if len(split_text) != 2:
+            print("not a valid command!")
+            continue
+        zone_of_search = int(input("Please Enter Zone Of Search(1 -> Most View ,-1 -> Less View): "))
+        query = input("Enter Your Query: ")
+        correction = ir_sys.query_spell_correction("english", query)
+        ir_sys.process_phase1_query(correction, zone_of_search)
     elif split_text[0] == "exit":
         exit()
     elif split_text[0] == "csv":
@@ -273,7 +281,8 @@ while True:
         if split_text[1] == "test":
             print(test_classifier.naive_bayes("english"))
         elif split_text[1] == "phase1":
-            phase1_classifier.naive_bayes("english")
+            docs_y_prediction = phase1_classifier.naive_bayes("english")
+            save_predicted_y_for_docs(docs_y_prediction, "naive_bayes")
         else:
             print("not a valid command!")
     elif split_text[0] == "knn":
@@ -295,8 +304,7 @@ while True:
                     phase1_classifier.y_train,
                     phase1_classifier.train_vector_space[phase1_classifier.train_size:],
                     best_k)
-                completed_y = np.append(phase1_classifier.y_train, docs_y_prediction)
-                save_predicted_y_for_docs(completed_y, "knn")
+                save_predicted_y_for_docs(docs_y_prediction, "knn")
             except:
                 print("enter an integer number with a value greater than zero!")
         else:
@@ -320,8 +328,7 @@ while True:
                     phase1_classifier.y_train,
                     phase1_classifier.train_vector_space[phase1_classifier.train_size:],
                     best_c)
-                completed_y = np.append(phase1_classifier.y_train, docs_y_prediction)
-                save_predicted_y_for_docs(completed_y, "svm")
+                save_predicted_y_for_docs(docs_y_prediction, "svm")
             except:
                 print("enter an integer number with a value greater than zero!")
         else:
@@ -335,9 +342,11 @@ while True:
                                            test_classifier.y_train,
                                            test_classifier.train_vector_space[test_classifier.train_size:])
         elif split_text[1] == "phase1":
-            phase1_classifier.random_forrest(phase1_classifier.train_vector_space[:phase1_classifier.train_size],
-                                             phase1_classifier.y_train,
-                                             phase1_classifier.train_vector_space[phase1_classifier.train_size:])
+            docs_y_prediction = phase1_classifier.random_forrest(
+                phase1_classifier.train_vector_space[:phase1_classifier.train_size],
+                phase1_classifier.y_train,
+                phase1_classifier.train_vector_space[phase1_classifier.train_size:])
+            save_predicted_y_for_docs(docs_y_prediction, "random_forrest")
         else:
             print("not a valid command!")
     elif split_text[0] == "best":
@@ -383,3 +392,10 @@ while True:
             print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
     else:
         print("not a valid command!")
+        with open('random_forrest_y_prediction', 'rb') as pickle_file:
+            kos = pickle.load(pickle_file)
+            pickle_file.close()
+            for x in kos:
+                print(x, end=" ")
+        print("kos")
+        print(ir_sys.docs_size["english"])

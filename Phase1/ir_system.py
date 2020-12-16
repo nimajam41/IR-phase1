@@ -958,3 +958,26 @@ class IRSystem:
         for doc_id in range(len(self.structured_documents[lang])):
             vectors += [self.ntn(doc_id, lang)]
         return vectors
+
+    def process_phase1_query(self, correction, zone_of_search):
+        query_dict = Counter(correction)
+        q_length = sum((1 + math.log10(query_dict[t])) ** 2 for t in query_dict.keys())
+        q_length = math.sqrt(q_length)
+        scores = []
+        try:
+            with open('random_forrest_y_prediction', 'rb') as pickle_file:
+                docs_label = pickle.load(pickle_file)
+                pickle_file.close()
+        except IOError:
+            print("File Not Found!!")
+            print("First You Must Classify Your Docs")
+        for doc_id in range(len(self.structured_documents["english"])):
+            if docs_label[doc_id] == zone_of_search:
+                scores += [self.tf_idf(query_dict, doc_id + 1, "english", q_length)]
+        top_ten = [s[0] for s in sorted(
+            enumerate(scores), key=lambda a: a[1], reverse=True)]
+        for i in range(10):
+            if not scores[top_ten[i]] == 0:
+                print("document " + str(top_ten[i] + 1) + ":",
+                      self.structured_documents["english"][top_ten[i]])
+                print("ltc-lnc score:", (scores[top_ten[i]]))
