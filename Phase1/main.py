@@ -3,6 +3,8 @@ import pickle
 from Phase1.ir_system import IRSystem
 from Phase1.classifier import Classifier
 import numpy as np
+import pandas as pd
+from statistics import median
 
 ir_sys = IRSystem(["description", "title"], "data/ted_talks.csv", 'data/Persian.xml')
 # phase1_classifier = Classifier("data/ted_talks.csv")
@@ -159,12 +161,12 @@ while True:
                 with open('test_classifier_data', 'wb') as pickle_file:
                     pickle.dump(test_classifier, pickle_file)
                     pickle_file.close()
-                    print("test classifier create successfully")
+                    print("test classifier saved successfully")
             elif split_text[1] == "phase1_classifier":
                 with open('phase1_classifier_data', 'wb') as pickle_file:
                     pickle.dump(phase1_classifier, pickle_file)
                     pickle_file.close()
-                    print("phase1 classifier create successfully")
+                    print("phase1 classifier saved successfully")
         elif len(split_text) == 3:
             type_of_indexing = split_text[1]
             lang = split_text[2]
@@ -291,18 +293,18 @@ while True:
             continue
         if split_text[1] == "test":
             try:
-                test_classifier.knn(test_classifier.train_vector_space[:test_classifier.train_size],
-                                    test_classifier.y_train,
-                                    test_classifier.train_vector_space[test_classifier.train_size:],
-                                    int(split_text[2]))
+                print(test_classifier.knn(test_classifier.vector_space[:test_classifier.train_size],
+                                          test_classifier.y_train,
+                                          test_classifier.vector_space[test_classifier.train_size:],
+                                          int(split_text[2])))
             except:
                 print("enter an integer number with a value greater than zero!")
         elif split_text[1] == "phase1":
             try:
                 docs_y_prediction = phase1_classifier.knn(
-                    phase1_classifier.train_vector_space[:phase1_classifier.train_size],
+                    phase1_classifier.vector_space[:phase1_classifier.train_size],
                     phase1_classifier.y_train,
-                    phase1_classifier.train_vector_space[phase1_classifier.train_size:],
+                    phase1_classifier.vector_space[phase1_classifier.train_size:],
                     best_k)
                 save_predicted_y_for_docs(docs_y_prediction, "knn")
             except:
@@ -315,10 +317,10 @@ while True:
             continue
         if split_text[1] == "test":
             try:
-                test_classifier.svm(test_classifier.train_vector_space[:test_classifier.train_size],
-                                    test_classifier.y_train,
-                                    test_classifier.train_vector_space[test_classifier.train_size:],
-                                    float(split_text[2]))
+                print(test_classifier.svm(test_classifier.train_vector_space[:test_classifier.train_size],
+                                          test_classifier.y_train,
+                                          test_classifier.train_vector_space[test_classifier.train_size:],
+                                          float(split_text[2])))
             except:
                 print("enter an integer number with a value greater than zero!")
         elif split_text[1] == "phase1":
@@ -338,9 +340,9 @@ while True:
             print("not a valid command!")
             continue
         if split_text[1] == "test":
-            test_classifier.random_forrest(test_classifier.train_vector_space[:test_classifier.train_size],
-                                           test_classifier.y_train,
-                                           test_classifier.train_vector_space[test_classifier.train_size:])
+            print(test_classifier.random_forrest(test_classifier.train_vector_space[:test_classifier.train_size],
+                                                 test_classifier.y_train,
+                                                 test_classifier.train_vector_space[test_classifier.train_size:]))
         elif split_text[1] == "phase1":
             docs_y_prediction = phase1_classifier.random_forrest(
                 phase1_classifier.train_vector_space[:phase1_classifier.train_size],
@@ -372,9 +374,9 @@ while True:
                                                float(split_text[2]))
             print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
         elif split_text[1] == "knn":
-            y_prediction = test_classifier.knn(test_classifier.train_vector_space[:test_classifier.train_size],
+            y_prediction = test_classifier.knn(test_classifier.vector_space[:test_classifier.train_size],
                                                test_classifier.y_train,
-                                               test_classifier.train_vector_space[test_classifier.train_size:],
+                                               test_classifier.vector_space[test_classifier.train_size:],
                                                int(split_text[2]))
             print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
         elif split_text[1] == "random_forrest":
@@ -385,11 +387,66 @@ while True:
             print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
         elif split_text[1] == "naive_bayes":
             y_prediction = test_classifier.naive_bayes("english")
-            print(len(test_classifier.train_vector_space), len(test_classifier.train_vector_space[1]))
-            print(len(test_classifier.train_ir_sys.positional_index["english"].keys()))
-            print(len(test_classifier.train_ir_sys.structured_documents["english"]))
-            print(len(test_classifier.y_test))
             print(print_str, test_classifier.find_metric(test_classifier.y_test, y_prediction, split_text[0]))
+    elif split_text[0] == "calculate" and split_text[1] == "majority" and split_text[2] == "vote":
+        array = []
+        try:
+            with open('svm_y_prediction', 'rb') as pickle_file:
+                docs_label = pickle.load(pickle_file)
+                array.append(docs_label)
+                pickle_file.close()
+        except IOError:
+            print("SVM File Not Found!!")
+            print("First You Must Classify Your Docs")
+        try:
+            with open('knn_y_prediction', 'rb') as pickle_file:
+                docs_label = pickle.load(pickle_file)
+                array.append(docs_label)
+                pickle_file.close()
+        except IOError:
+            print("KNN File Not Found!!")
+            print("First You Must Classify Your Docs")
+        try:
+            with open('random_forrest_y_prediction', 'rb') as pickle_file:
+                docs_label = pickle.load(pickle_file)
+                array.append(docs_label)
+                pickle_file.close()
+        except IOError:
+            print("Random Forrest File Not Found!!")
+            print("First You Must Classify Your Docs")
+        try:
+            with open('naive_bayes_y_prediction', 'rb') as pickle_file:
+                docs_label = pickle.load(pickle_file)
+                array.append(docs_label)
+                pickle_file.close()
+        except IOError:
+            print("Naive Bayes File Not Found!!")
+            print("First You Must Classify Your Docs")
+        final_result = []
+        for i in range(len(array[0])):
+            result = 0
+            for j in range(len(array)):
+                result += array[j][i]
+            if result == 0:
+                final_result.append(array[2][i])
+            elif result > 0:
+                final_result.append(1)
+            else:
+                final_result.append(-1)
+        save_predicted_y_for_docs(final_result, "majority_vote_prediction")
+        # df = pd.read_csv("data/ted_talks.csv", usecols=["views"])
+        # x = []
+        # for i in range(len(df)):
+        #     x += [df.iloc[i]["views"]]
+        # med = median(x)
+        # y = []
+        # for p in x:
+        #     if p > med:
+        #         y.append(1)
+        #     else:
+        #         y.append(-1)
+        # print(y)
+        # print(final_result)
+        # print(phase1_classifier.find_metric(final_result, y, "accuracy"))
     else:
         print("not a valid command!")
-

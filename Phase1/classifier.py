@@ -16,6 +16,9 @@ class Classifier:
         self.train_ir_sys.csv_insert(path, "english")
         self.train_vector_space = self.create_vector_matrix(self.train_ir_sys, "english")
         self.y_train = self.csv_views("data/train.csv")
+
+        self.vector_space = self.train_ir_sys.use_ntn("english")
+
         self.y_test = None
         self.knn_classifier = None
         self.svm_classifier = None
@@ -70,7 +73,7 @@ class Classifier:
         y_predicted = []
         p_positive_doc = flag_counter["positive_docs"] / self.train_size
         p_negative_doc = 1 - p_positive_doc
-        for docID in range(len(self.y_test)):
+        for docID in range(len(self.train_ir_sys.structured_documents[lang]) - self.train_size):
             p_positive = 0
             p_negative = 0
             for col in range(2):
@@ -90,7 +93,7 @@ class Classifier:
         return y_predicted
 
     def knn(self, x_train, y_train, x_test, k):
-        dists = np.array(self.docs_distances(x_train, x_test))
+        dists = np.array(self.documents_distances(x_train, x_test))
         y_pred = []
         for doc_id in range(len(x_test)):
             test_dist = dists[:, doc_id]
@@ -108,14 +111,37 @@ class Classifier:
                 y_pred += [-1]
         return y_pred
 
-    def docs_distances(self, first, second):
+    def two_doc_distance(self, first, second, doc1, doc2):
+        list1 = first[doc1].keys()
+        list2 = second[doc2].keys()
+        intersect = set(list1) & set(list2)
+        delta = set(list1) ^ set(list2)
+        result = 0
+        for term in intersect:
+            result += ((first[doc1][term] - second[doc2][term]) ** 2)
+        for term in delta:
+            if term in first[doc1].keys():
+                result += ((first[doc1][term]) ** 2)
+            else:
+                result += ((second[doc2][term]) ** 2)
+        return math.sqrt(result)
+
+    def documents_distances(self, first, second):
         result = []
         for i in range(len(first)):
             result += [[]]
             for j in range(len(second)):
-                dist = np.linalg.norm(first[i] - second[j])
-                result[i] += [dist]
+                result[i] += [self.two_doc_distance(first, second, i, j)]
         return result
+
+    # def docs_distances(self, first, second):
+    #     result = []
+    #     for i in range(len(first)):
+    #         result += [[]]
+    #         for j in range(len(second)):
+    #             dist = np.linalg.norm(first[i] - second[j])
+    #             result[i] += [dist]
+    #     return result
 
     def svm(self, x_train, y_train, x_test, c_parameter):
         model = SVC(kernel='rbf', C=c_parameter)
@@ -169,10 +195,25 @@ class Classifier:
                 y_validation_set += [self.y_train[i]]
         return x_train_set, y_train_set, x_validation_set, y_validation_set
 
+    def make_knn_validation_set(self):
+        x_train_set = []
+        x_validation_set = []
+        y_train_set = []
+        y_validation_set = []
+        for i in range(self.train_size):
+            m = random.uniform(0, 1)
+            if m < 0.9:
+                x_train_set += [self.vector_space[i]]
+                y_train_set += [self.y_train[i]]
+            else:
+                x_validation_set += [self.vector_space[i]]
+                y_validation_set += [self.y_train[i]]
+        return x_train_set, y_train_set, x_validation_set, y_validation_set
+
     def find_best_k(self, arr, print_flag):
-        max_f1 = -1
+        max_accuracy = -1
         best_k = None
-        x_train_set, y_train_set, x_validation_set, y_validation_set = self.make_validation_set()
+        x_train_set, y_train_set, x_validation_set, y_validation_set = self.make_knn_validation_set()
         for k in arr:
             y_pred = self.knn(x_train_set, y_train_set, x_validation_set, k)
             f1 = self.find_metric(y_validation_set, y_pred, "f1")
@@ -186,16 +227,16 @@ class Classifier:
                 print("recall = ", recall)
                 print("accuracy = ", accuracy)
                 print()
-            if f1 > max_f1:
-                max_f1 = f1
+            if accuracy > max_accuracy:
+                max_accuracy = accuracy
                 best_k = k
         if print_flag:
             print("best k is: ", best_k)
-            print("best f1 score is: ", max_f1)
+            print("best accuracy score is: ", max_accuracy)
         return best_k
 
     def find_best_c(self, arr, print_flag):
-        max_f1 = -1
+        max_accuracy = -1
         best_c = None
         x_train_set, y_train_set, x_validation_set, y_validation_set = self.make_validation_set()
         for c in arr:
@@ -211,10 +252,10 @@ class Classifier:
                 print("recall = ", recall)
                 print("accuracy = ", accuracy)
                 print()
-            if f1 > max_f1:
-                max_f1 = f1
+            if accuracy > max_accuracy:
+                max_accuracy = accuracy
                 best_c = c
         if print_flag:
             print("best c is: ", best_c)
-            print("best f1 score is: ", max_f1)
+            print("best accuracy score is: ", max_accuracy)
         return best_c
