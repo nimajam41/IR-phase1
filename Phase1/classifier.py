@@ -134,15 +134,6 @@ class Classifier:
                 result[i] += [self.two_doc_distance(first, second, i, j)]
         return result
 
-    # def docs_distances(self, first, second):
-    #     result = []
-    #     for i in range(len(first)):
-    #         result += [[]]
-    #         for j in range(len(second)):
-    #             dist = np.linalg.norm(first[i] - second[j])
-    #             result[i] += [dist]
-    #     return result
-
     def svm(self, x_train, y_train, x_test, c_parameter):
         model = SVC(kernel='rbf', C=c_parameter)
         model.fit(x_train, y_train)
