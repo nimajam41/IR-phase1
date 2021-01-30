@@ -159,6 +159,8 @@ class IRSystem:
                 descriptions[i] = word_tokenize(descriptions[i])
             for persian_word in titles[i]:
                 persian_word = persian_word.replace("\u200c", "")
+                persian_word = persian_word.replace("\u200e", "")
+                persian_word = persian_word.replace("\u200f", "")
                 if len(re.findall(r'([a-zA-Z]+)', persian_word)) == 0:
                     titles_array.append(persian_word)
             if len(descriptions) != 0:
@@ -188,7 +190,7 @@ class IRSystem:
             dictionary.append([title_arr, description_arr])
 
         if len(stop_words) == 0:
-            remaining_terms, stop_words = self.process_stop_words(40, all_tokens, show)
+            remaining_terms, stop_words = self.process_stop_words(10, all_tokens, show)
         else:
             remaining_terms = []
         final_tokens = []
