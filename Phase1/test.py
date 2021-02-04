@@ -1,8 +1,17 @@
 import json
 import re
-
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from Phase1.ir_system import IRSystem
+from sklearn.cluster import KMeans
+from sklearn.metrics.cluster import adjusted_rand_score
+from sklearn.mixture import GaussianMixture
+from sklearn import metrics
+
+
+def purity_score(y_true, y_pred):
+    contingency_matrix = metrics.cluster.contingency_matrix(y_true, y_pred)
+    return np.sum(np.amax(contingency_matrix, axis=0)) / np.sum(contingency_matrix)
 
 
 ir_system = IRSystem(None, None, None)
@@ -23,6 +32,38 @@ def rebuild_doc(doc):
         for word in arr:
             s += (word + " ")
     return s[:len(s) - 1]
+
+
+def kmeans(data, k):
+    model = KMeans(n_clusters=k, random_state=0)
+    return model.fit_predict(data)
+
+
+def gmm(data, n):
+    model = GaussianMixture(n)
+    return model.fit_predict(data)
+
+
+def find_real_clusters(news_sets):
+    real_clusters = dict()
+    for news in news_sets:
+        main_subject = news.tags[0].split(">")[0].split(" ")[0]
+        if main_subject not in real_clusters.keys():
+            real_clusters[main_subject] = [news.id]
+        else:
+            real_clusters[main_subject] += [news.id]
+    return real_clusters
+
+
+def enumerate_clusters(news_sets, keys):
+    arr = []
+    keys_dict = dict()
+    for i in range(len(keys)):
+        keys_dict[keys[i]] = i
+    for news in news_sets:
+        main_subject = news.tags[0].split(">")[0].split(" ")[0]
+        arr += [keys_dict[main_subject]]
+    return np.array(arr)
 
 
 with open('data/hamshahri.json', encoding="utf8") as f:
@@ -54,8 +95,11 @@ _, processed_documents, remaining, stopwords = ir_system.prepare_text(ir_system.
 restructured_documents = []
 for doc in processed_documents:
     restructured_documents += [rebuild_doc(doc)]
+# print(restructured_documents)
 vectorizer = TfidfVectorizer()
 tf_idf_matrix = vectorizer.fit_transform(restructured_documents)
-
-corpus = ["car cat dog", "dog lion"]
-
+tf_idf_matrix = tf_idf_matrix.toarray()
+real_clusters = find_real_clusters(news_sets)
+keys = list(real_clusters.keys())
+numbered_clusters = enumerate_clusters(news_sets, keys)
+kmeans_result = gmm(tf_idf_matrix, 4)
