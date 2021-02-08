@@ -10,6 +10,8 @@ from sklearn.mixture import GaussianMixture
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import csv
+from scipy.cluster.hierarchy import dendrogram
+from gensim.models import Word2Vec
 
 ir_system = IRSystem(None, None, None)
 
@@ -41,8 +43,8 @@ def gmm(data, n):
     return model.fit_predict(data)
 
 
-def hierarchical_clustering(data, n):
-    model = AgglomerativeClustering(n_clusters=n, linkage="average")
+def hierarchical_clustering(data, n, linkage):
+    model = AgglomerativeClustering(n_clusters=n, linkage=linkage)
     return model.fit_predict(data)
 
 
@@ -74,6 +76,7 @@ def initialize_data(path):
 
     titles = []
     descriptions = []
+    docs_terms = []
     news_sets = []
     id = 1
     for data in dataset:
@@ -81,7 +84,6 @@ def initialize_data(path):
         news_sets += [news]
         new_title = re.sub("[\{].*?[\}]", "", data['title'])
         new_title = re.sub(r'[0-9]', "", new_title)
-        new_new_title = re.sub(r'[۰-۹]', "", new_title)
         titles += [new_title]
         new_summary = re.sub("[\{].*?[\}]", "", data['summary'])
         new_summary = re.sub(r'[0-9]', "", new_summary)
@@ -98,7 +100,12 @@ def initialize_data(path):
     restructured_documents = []
     for doc in processed_documents:
         restructured_documents += [rebuild_doc(doc)]
-    return news_sets, restructured_documents
+        l = []
+        for arr in doc:
+            for word in arr:
+                l += [word]
+        docs_terms += [l]
+    return news_sets, restructured_documents, docs_terms
 
 
 def tf_idf_initializer(restructured_documents):
@@ -106,6 +113,18 @@ def tf_idf_initializer(restructured_documents):
     tf_idf_matrix = vectorizer.fit_transform(restructured_documents)
     tf_idf_matrix = tf_idf_matrix.toarray()
     return tf_idf_matrix
+
+
+def w2v_initializer(docs_terms):
+    model = Word2Vec(docs_terms, workers=8, iter=100)
+    w2v = []
+    for doc in docs_terms:
+        res = np.concatenate(
+            [np.expand_dims(np.array(model.wv[term]), axis=1) for term in doc if term in model.wv.vocab],
+            axis=1)
+        mean_vector = res.mean(axis=1)
+        w2v += [mean_vector]
+    return np.array(w2v)
 
 
 def show_plot(n_values, ari_values, nmi_values, type, cluster, param):
@@ -121,6 +140,23 @@ def show_plot(n_values, ari_values, nmi_values, type, cluster, param):
     plt.show()
 
 
+def show_dendrogram(model, **kwargs):
+    counts = np.zeros(model.children_.shape[0])
+    n_samples = len(model.labels_)
+    for i, merge in enumerate(model.children_):
+        current_count = 0
+        for child in merge:
+            if child < n_samples:
+                current_count += 1
+            else:
+                current_count += counts[child - n_samples]
+        counts[i] = current_count
+
+    linkage = np.column_stack([model.children_, model.distances_, counts]).astype(float)
+
+    dendrogram(linkage, **kwargs)
+
+
 def write_to_csv(path, news_sets, result):
     with open(path, mode='w', newline='', encoding='utf8') as csv_file:
         fieldnames = ['link', 'cluster']
@@ -130,8 +166,8 @@ def write_to_csv(path, news_sets, result):
             writer.writerow({'link': str(news_sets[i].link), 'cluster': str(result[i])})
 
 
-def find_kmeans_metrics(tf_idf_matrix, numbered_clusters):
-    kmeans_result = kmeans(tf_idf_matrix, 1)
+def find_kmeans_metrics(matrix, numbered_clusters, type):
+    kmeans_result = kmeans(matrix, 1)
     best_result = kmeans_result
     best_k = 1
     best_ari = adjusted_rand_score(kmeans_result, numbered_clusters)
@@ -140,7 +176,7 @@ def find_kmeans_metrics(tf_idf_matrix, numbered_clusters):
     ari_values = [best_ari]
     nmi_values = [best_nmi]
     for k in range(2, 20):
-        kmeans_result = kmeans(tf_idf_matrix, k)
+        kmeans_result = kmeans(matrix, k)
         ari = adjusted_rand_score(kmeans_result, numbered_clusters)
         nmi = normalized_mutual_info_score(kmeans_result, numbered_clusters)
         k_values += [k]
@@ -152,22 +188,32 @@ def find_kmeans_metrics(tf_idf_matrix, numbered_clusters):
             best_k = k
             best_ari = ari
             best_result = kmeans_result
-    best_result.dump("data/phase3_outputs/tf-idf-kmeans.dat")
-    show_plot(k_values, ari_values, nmi_values, "tf-idf", "K-means", "k")
+
+    best_result.dump("data/phase3_outputs/" + type + "-kmeans.dat")
+    show_plot(k_values, ari_values, nmi_values, type, "K-means", "k")
 
     print("best k value:", best_k, ",best ARI value:", best_ari, ",best NMI value:", best_nmi)
 
 
 def tf_idf_kmeans(tf_idf_matrix, numbered_clusters, find_metric):
     if find_metric:
-        find_kmeans_metrics(tf_idf_matrix, numbered_clusters)
+        find_kmeans_metrics(tf_idf_matrix, numbered_clusters, "tf-idf")
     else:
         kmeans_result = np.load("data/phase3_outputs/tf-idf-kmeans.dat", allow_pickle=True)
-        print("ARI for K-means (best k):", adjusted_rand_score(kmeans_result, numbered_clusters))
+        print("ARI for K-means (best k) for tf-idf:", adjusted_rand_score(kmeans_result, numbered_clusters))
         write_to_csv('data/phase3_outputs/tf-idf-kmeans.csv', news_sets, kmeans_result)
 
 
-def find_gmm_metrics(reduced_matrix, numbered_clusters):
+def w2v_kmeans(w2v_matrix, numbered_clusters, find_metric):
+    if find_metric:
+        find_kmeans_metrics(w2v_matrix, numbered_clusters, "w2v")
+    else:
+        kmeans_result = np.load("data/phase3_outputs/w2v-kmeans.dat", allow_pickle=True)
+        print("ARI for K-means (best k) for w2v:", adjusted_rand_score(kmeans_result, numbered_clusters))
+        write_to_csv('data/phase3_outputs/w2v-kmeans.csv', news_sets, kmeans_result)
+
+
+def find_gmm_metrics(reduced_matrix, numbered_clusters, type):
     gmm_result = gmm(reduced_matrix, 1)
     best_result = gmm_result
     best_n = 1
@@ -189,8 +235,8 @@ def find_gmm_metrics(reduced_matrix, numbered_clusters):
             best_n = n
             best_ari = ari
             best_result = gmm_result
-    show_plot(n_values, ari_values, nmi_values, "tf-idf", "GMM", "n")
-    best_result.dump("data/phase3_outputs/tf-idf-gmm.dat")
+    show_plot(n_values, ari_values, nmi_values, type, "GMM", "n")
+    best_result.dump("data/phase3_outputs/" + type + "-gmm.dat")
 
     print("best n value:", best_n, ",best ARI value:", best_ari, ",best NMI value:", best_nmi)
 
@@ -198,15 +244,24 @@ def find_gmm_metrics(reduced_matrix, numbered_clusters):
 def tf_idf_gmm(tf_idf_matrix, numbered_clusters, find_metric):
     if find_metric:
         reduced_matrix = PCA(n_components=1000).fit_transform(tf_idf_matrix)
-        find_gmm_metrics(reduced_matrix, numbered_clusters)
+        find_gmm_metrics(reduced_matrix, numbered_clusters, "tf-idf")
     else:
         gmm_result = np.load("data/phase3_outputs/tf-idf-gmm.dat", allow_pickle=True)
-        print("ARI for GMM (best n):", adjusted_rand_score(gmm_result, numbered_clusters))
+        print("ARI for GMM (best n) for tf-idf:", adjusted_rand_score(gmm_result, numbered_clusters))
         write_to_csv('data/phase3_outputs/tf-idf-gmm.csv', news_sets, gmm_result)
 
 
-def find_hierarchical_clustering_metrics(tf_idf_matrix, numbered_clusters):
-    hierarchical_result = hierarchical_clustering(tf_idf_matrix, 1)
+def w2v_gmm(w2v_matrix, numbered_clusters, find_metric):
+    if find_metric:
+        find_gmm_metrics(w2v_matrix, numbered_clusters, "w2v")
+    else:
+        gmm_result = np.load("data/phase3_outputs/w2v-gmm.dat", allow_pickle=True)
+        print("ARI for GMM (best n) for w2v:", adjusted_rand_score(gmm_result, numbered_clusters))
+        write_to_csv('data/phase3_outputs/w2v-gmm.csv', news_sets, gmm_result)
+
+
+def find_hierarchical_clustering_metrics(matrix, numbered_clusters, type, linkage):
+    hierarchical_result = hierarchical_clustering(matrix, 1, linkage)
     best_result = hierarchical_result
     best_n = 1
     best_ari = adjusted_rand_score(hierarchical_result, numbered_clusters)
@@ -215,7 +270,7 @@ def find_hierarchical_clustering_metrics(tf_idf_matrix, numbered_clusters):
     ari_values = [best_ari]
     nmi_values = [best_nmi]
     for n in range(2, 31, 2):
-        hierarchical_result = hierarchical_clustering(tf_idf_matrix, n)
+        hierarchical_result = hierarchical_clustering(matrix, n, linkage)
         ari = adjusted_rand_score(hierarchical_result, numbered_clusters)
         nmi = normalized_mutual_info_score(hierarchical_result, numbered_clusters)
         n_values += [n]
@@ -227,24 +282,37 @@ def find_hierarchical_clustering_metrics(tf_idf_matrix, numbered_clusters):
             best_n = n
             best_ari = ari
             best_result = hierarchical_result
-    show_plot(n_values, ari_values, nmi_values, "tf-idf", "Hierarchical Clustering", "n")
-    best_result.dump("data/phase3_outputs/tf-idf-agglomerative.dat")
+    show_plot(n_values, ari_values, nmi_values, type, "Hierarchical Clustering", "n")
+    best_result.dump("data/phase3_outputs/" + type + "-agglomerative.dat")
 
     print("best n value:", best_n, ",best ARI value:", best_ari, ",best NMI value:", best_nmi)
 
 
 def tf_idf_hierarchical_clustering(tf_idf_matrix, numbered_clusters, find_metric):
     if find_metric:
-        find_hierarchical_clustering_metrics(tf_idf_matrix, numbered_clusters)
+        find_hierarchical_clustering_metrics(tf_idf_matrix, numbered_clusters, "tf-idf", "average")
     else:
         hierarchical_result = np.load("data/phase3_outputs/tf-idf-agglomerative.dat", allow_pickle=True)
-        print("ARI for Hierarchical Clustering (best n):", adjusted_rand_score(hierarchical_result, numbered_clusters))
+        print("ARI for Hierarchical Clustering (best n) for tf-idf:",
+              adjusted_rand_score(hierarchical_result, numbered_clusters))
         write_to_csv('data/phase3_outputs/tf-idf-agglomerative.csv', news_sets, hierarchical_result)
 
 
-news_sets, restructured_documents = initialize_data("data/hamshahri.json")
+def w2v_hierarchical_clustering(w2v_matrix, numbered_clusters, find_metric):
+    if find_metric:
+        find_hierarchical_clustering_metrics(w2v_matrix, numbered_clusters, "w2v", "ward")
+    else:
+        hierarchical_result = np.load("data/phase3_outputs/w2v-agglomerative.dat", allow_pickle=True)
+        print("ARI for Hierarchical Clustering (best n) for w2v:",
+              adjusted_rand_score(hierarchical_result, numbered_clusters))
+        write_to_csv('data/phase3_outputs/w2v-agglomerative.csv', news_sets, hierarchical_result)
+
+
+news_sets, restructured_documents, docs_terms = initialize_data("data/hamshahri.json")
 real_clusters = find_real_clusters(news_sets)
 keys = list(real_clusters.keys())
 numbered_clusters = enumerate_clusters(news_sets, keys)
 tf_idf_matrix = tf_idf_initializer(restructured_documents)
-tf_idf_hierarchical_clustering(tf_idf_matrix, numbered_clusters, False)
+# tf_idf_hierarchical_clustering(tf_idf_matrix, numbered_clusters, False)
+w2v_matrix = w2v_initializer(docs_terms)
+tf_idf_hierarchical_clustering(tf_idf_matrix, numbered_clusters, True)
