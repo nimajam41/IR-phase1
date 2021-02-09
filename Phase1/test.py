@@ -7,11 +7,13 @@ from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.metrics import normalized_mutual_info_score
 from sklearn.mixture import GaussianMixture
-from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import csv
 from scipy.cluster.hierarchy import dendrogram
 from gensim.models import Word2Vec
+from sklearn.decomposition import PCA
+import seaborn as sns
+import pandas as pd
 
 ir_system = IRSystem(None, None, None)
 
@@ -108,6 +110,17 @@ def initialize_data(path):
     return news_sets, restructured_documents, docs_terms
 
 
+def visualize(matrix, label, title):
+    plt.figure(figsize=(8,8))
+    pca = PCA(n_components=2)
+    principalComponents = pca.fit_transform(matrix)
+    a = principalComponents.T
+    a = pd.DataFrame({'x': a[0], 'y': a[1], 'z': label})
+    sns.scatterplot(data=a, x="x", y="y", hue='z', palette="deep")
+    plt.title(title)
+    plt.show()
+
+
 def tf_idf_initializer(restructured_documents):
     vectorizer = TfidfVectorizer()
     tf_idf_matrix = vectorizer.fit_transform(restructured_documents)
@@ -202,6 +215,8 @@ def tf_idf_kmeans(tf_idf_matrix, numbered_clusters, find_metric):
         kmeans_result = np.load("data/phase3_outputs/tf-idf-kmeans.dat", allow_pickle=True)
         print("ARI for K-means (best k) for tf-idf:", adjusted_rand_score(kmeans_result, numbered_clusters))
         write_to_csv('data/phase3_outputs/tf-idf-kmeans.csv', news_sets, kmeans_result)
+        visualize(tf_idf_matrix, kmeans_result, "tf_idf_kmeans_result")
+        visualize(tf_idf_matrix, numbered_clusters, "tf_idf_real_clustered_data")
 
 
 def w2v_kmeans(w2v_matrix, numbered_clusters, find_metric):
@@ -211,7 +226,8 @@ def w2v_kmeans(w2v_matrix, numbered_clusters, find_metric):
         kmeans_result = np.load("data/phase3_outputs/w2v-kmeans.dat", allow_pickle=True)
         print("ARI for K-means (best k) for w2v:", adjusted_rand_score(kmeans_result, numbered_clusters))
         write_to_csv('data/phase3_outputs/w2v-kmeans.csv', news_sets, kmeans_result)
-
+        visualize(w2v_matrix, kmeans_result, "word2vec_kmeans_result")
+        visualize(w2v_matrix, numbered_clusters, "word2vec_real_clustered_data")
 
 def find_gmm_metrics(reduced_matrix, numbered_clusters, type):
     gmm_result = gmm(reduced_matrix, 1)
@@ -249,7 +265,8 @@ def tf_idf_gmm(tf_idf_matrix, numbered_clusters, find_metric):
         gmm_result = np.load("data/phase3_outputs/tf-idf-gmm.dat", allow_pickle=True)
         print("ARI for GMM (best n) for tf-idf:", adjusted_rand_score(gmm_result, numbered_clusters))
         write_to_csv('data/phase3_outputs/tf-idf-gmm.csv', news_sets, gmm_result)
-
+        visualize(tf_idf_matrix, gmm_result, "tf_idf_gmm_result")
+        visualize(tf_idf_matrix, numbered_clusters, "tf_idf_real_clustered_data")
 
 def w2v_gmm(w2v_matrix, numbered_clusters, find_metric):
     if find_metric:
@@ -258,7 +275,8 @@ def w2v_gmm(w2v_matrix, numbered_clusters, find_metric):
         gmm_result = np.load("data/phase3_outputs/w2v-gmm.dat", allow_pickle=True)
         print("ARI for GMM (best n) for w2v:", adjusted_rand_score(gmm_result, numbered_clusters))
         write_to_csv('data/phase3_outputs/w2v-gmm.csv', news_sets, gmm_result)
-
+        visualize(w2v_matrix, gmm_result, "word2vec_gmm_result")
+        visualize(w2v_matrix, numbered_clusters, "word2vec_real_clustered_data")
 
 def find_hierarchical_clustering_metrics(matrix, numbered_clusters, type, linkage):
     hierarchical_result = hierarchical_clustering(matrix, 1, linkage)
@@ -296,6 +314,8 @@ def tf_idf_hierarchical_clustering(tf_idf_matrix, numbered_clusters, find_metric
         print("ARI for Hierarchical Clustering (best n) for tf-idf:",
               adjusted_rand_score(hierarchical_result, numbered_clusters))
         write_to_csv('data/phase3_outputs/tf-idf-agglomerative.csv', news_sets, hierarchical_result)
+        visualize(tf_idf_matrix, hierarchical_result, "tf_idf_hierarchical_result")
+        visualize(tf_idf_matrix, numbered_clusters, "tf_idf_real_clustered_data")
 
 
 def w2v_hierarchical_clustering(w2v_matrix, numbered_clusters, find_metric):
@@ -306,13 +326,13 @@ def w2v_hierarchical_clustering(w2v_matrix, numbered_clusters, find_metric):
         print("ARI for Hierarchical Clustering (best n) for w2v:",
               adjusted_rand_score(hierarchical_result, numbered_clusters))
         write_to_csv('data/phase3_outputs/w2v-agglomerative.csv', news_sets, hierarchical_result)
-
+        visualize(w2v_matrix, hierarchical_result, "word2vec_hierarchical_result")
+        visualize(w2v_matrix, numbered_clusters, "word2vec_real_clustered_data")
 
 news_sets, restructured_documents, docs_terms = initialize_data("data/hamshahri.json")
 real_clusters = find_real_clusters(news_sets)
 keys = list(real_clusters.keys())
 numbered_clusters = enumerate_clusters(news_sets, keys)
 tf_idf_matrix = tf_idf_initializer(restructured_documents)
-# tf_idf_hierarchical_clustering(tf_idf_matrix, numbered_clusters, False)
 w2v_matrix = w2v_initializer(docs_terms)
 w2v_gmm(w2v_matrix, numbered_clusters, False)
