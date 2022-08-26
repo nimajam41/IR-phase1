@@ -1,0 +1,7 @@
+pandas
+numpy
+nltk==3.3
+hazm
+matplotlib
+gensim
+seaborn

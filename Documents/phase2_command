@@ -1,0 +1,48 @@
+create test_classifier
+create phase1_classifier
+save test_classifier
+save phase1_classifier
+
+load test_classifier
+load phase1_classifier
+
+naive_bayes test
+knn test 6
+svm test 2
+random_forrest test
+
+best k
+best c
+
+naive_bayes phase1
+knn phase1
+svm phase1
+random_forrest phase1
+calculate majority vote
+
+prepare english
+create positional english
+create bigram english
+phase1 query
+Please Enter Zone Of Search(1 -> Most View ,-1 -> Less View): (1 or -1)
+Enter Your Query: "Your Query"
+
+accuracy naive_bayes
+precision naive_bayes
+recall naive_bayes
+f1 naive_bayes
+
+accuracy knn 9
+precision knn 9
+recall knn 9
+f1 knn 9
+
+accuracy svm 1.5
+precision svm 1.5
+recall svm 1.5
+f1 svm 1.5
+
+accuracy random_forrest
+precision random_forrest
+recall random_forrest
+f1 random_forrest
